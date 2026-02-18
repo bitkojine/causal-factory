@@ -8,10 +8,10 @@ import { CanvasRenderer } from './ui/renderer.js';
 const initialModel: FactoryModel = {
     machines: {},
     bots: [],
+    credits: 1000,
     gridWidth: 50,
     gridHeight: 50,
     tickCount: 0,
-    stressLevel: 1,
 };
 
 const runner = new BrowserRunner();
@@ -42,25 +42,41 @@ const dispatcher = createDispatcher({
     devMode: true,
 });
 
-// Setup Initial Scene
-dispatcher.dispatch({
-    kind: 'add_machine',
-    machine: {
-        id: 'm1',
-        x: 100,
-        y: 100,
-        type: 'extractor',
-        outputs: ['iron'],
-        inputs: [],
-        inventory: { iron: 0, copper: 0, gear: 0, wire: 0, compute_core: 0 },
-        progress: 0,
-    },
-});
+// Setup Initial Industrial Zone
+const setupScenario = () => {
+    // 1. Extractor
+    dispatcher.dispatch({
+        kind: 'add_machine',
+        machine: { id: 'ext1', x: 100, y: 300, type: 'extractor', inputRequirements: [], outputs: ['iron_ore'], inventory: { iron_ore: 0, iron_plate: 0, gear: 0, copper_ore: 0, copper_wire: 0, compute_core: 0 }, progress: 0, speed: 0.1 }
+    });
+    // 2. Smelter
+    dispatcher.dispatch({
+        kind: 'add_machine',
+        machine: { id: 'sm1', x: 300, y: 300, type: 'smelter', inputRequirements: ['iron_ore'], outputs: ['iron_plate'], inventory: { iron_ore: 0, iron_plate: 0, gear: 0, copper_ore: 0, copper_wire: 0, compute_core: 0 }, progress: 0, speed: 0.05 }
+    });
+    // 3. Assembler
+    dispatcher.dispatch({
+        kind: 'add_machine',
+        machine: { id: 'asm1', x: 500, y: 300, type: 'assembler', inputRequirements: ['iron_plate'], outputs: ['gear'], inventory: { iron_ore: 0, iron_plate: 0, gear: 0, copper_ore: 0, copper_wire: 0, compute_core: 0 }, progress: 0, speed: 0.03 }
+    });
+    // 4. Sink
+    dispatcher.dispatch({
+        kind: 'add_machine',
+        machine: { id: 'snk1', x: 700, y: 300, type: 'sink', inputRequirements: ['gear'], outputs: [], inventory: { iron_ore: 0, iron_plate: 0, gear: 0, copper_ore: 0, copper_wire: 0, compute_core: 0 }, progress: 0, speed: 1.0 }
+    });
 
-dispatcher.dispatch({ kind: 'spawn_bots', count: 1000 });
+    dispatcher.dispatch({ kind: 'spawn_bots', count: 100 });
+};
 
-// Expose for debugging and UI
-(window as any).dispatcher = dispatcher;
+setupScenario();
+
+// UI Bindings
+(window as any).buyMachine = (type: any) => {
+    const x = Math.random() * (window.innerWidth - 100) + 50;
+    const y = Math.random() * (window.innerHeight - 200) + 100;
+    dispatcher.dispatch({ kind: 'buy_machine', machineType: type, x, y });
+};
+
 (window as any).spawnBots = (count: number) => {
     dispatcher.dispatch({ kind: 'spawn_bots', count });
 };
@@ -70,34 +86,20 @@ let stressInterval: any = null;
     if (stressInterval) {
         clearInterval(stressInterval);
         stressInterval = null;
-        console.log('Stress mode OFF');
     } else {
         stressInterval = setInterval(() => {
-            dispatcher.dispatch({ kind: 'spawn_bots', count: 500 });
-        }, 100);
-        console.log('Stress mode ON');
+            dispatcher.dispatch({ kind: 'spawn_bots', count: 200 });
+        }, 50);
     }
+};
+
+(window as any).triggerMarketCrash = () => {
+    dispatcher.dispatch({ kind: 'market_crash' });
 };
 
 (window as any).triggerReplay = () => {
     const { log, snapshot: finalSnapshot } = dispatcher.getReplayableState();
-    console.log('Starting replay of', log.length, 'messages');
-
-    const startTime = performance.now();
-
-    // Use the dedicated replay utility which synchronously processes the log
-    const replayedSnapshot = replay({
-        initialModel: initialModel,
-        update,
-        log,
-    });
-
-    const duration = performance.now() - startTime;
-
-    // Verify determinism
+    const replayedSnapshot = replay({ initialModel, update, log });
     const isMatch = JSON.stringify(finalSnapshot) === JSON.stringify(replayedSnapshot);
-
-    alert(`Replay completed in ${duration.toFixed(2)}ms\nDeterminism: ${isMatch ? 'PASSED ✅' : 'FAILED ❌'}`);
-    console.log('Final Snapshot:', finalSnapshot);
-    console.log('Replayed Snapshot:', replayedSnapshot);
+    alert(`Determinism Replay: ${isMatch ? 'PASSED ✅' : 'FAILED ❌'}`);
 };
