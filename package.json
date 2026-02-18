@@ -14,8 +14,5 @@
         "vite": "^5.0.0",
         "vitest": "^1.0.0"
     },
-    "dependencies": {
-        "@causaloop/core": "workspace:*",
-        "@causaloop/platform-browser": "workspace:*"
-    }
+    "dependencies": {}
 }
