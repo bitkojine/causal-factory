@@ -138,7 +138,7 @@ export const update: UpdateFn<FactoryModel, FactoryMsg, FactoryEffect> = (
   }
 };
 
-function handleTick(
+export function handleTick(
   model: FactoryModel,
   delta: number,
 ): UpdateResult<FactoryModel, FactoryEffect> {
