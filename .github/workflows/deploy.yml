@@ -21,24 +21,45 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout causal-factory
         uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+        with:
+          path: causal-factory
+
+      - name: Checkout causaloop-repo
+        uses: actions/checkout@v4
+        with:
+          repository: bitkojine/causaloop
+          path: causaloop-repo
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: "pnpm"
+          cache-dependency-path: causal-factory/pnpm-lock.yaml
+
       - name: Install dependencies
-        run: pnpm install
+        run: |
+          cd causaloop-repo && pnpm install
+          cd ../causal-factory && pnpm install
+
       - name: Build
-        run: pnpm build
+        run: cd causal-factory && pnpm build
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: "./dist"
+          path: "causal-factory/dist"
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
