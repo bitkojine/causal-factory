@@ -247,7 +247,7 @@ function handleTick(
             break;
           }
         } else {
-          const target = supply.find((_) => true);
+          const target = supply.find(() => true);
           if (target) {
             nextBots[id] = {
               ...bot,
