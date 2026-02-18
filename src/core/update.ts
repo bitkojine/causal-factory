@@ -15,7 +15,7 @@ export const update: UpdateFn<FactoryModel, FactoryMsg, FactoryEffect> = (
 ): UpdateResult<FactoryModel, FactoryEffect> => {
     switch (msg.kind) {
         case 'tick':
-            return handleTick(model, msg.delta, ctx);
+            return handleTick(model, msg.delta);
         case 'add_machine':
             return {
                 model: {
@@ -71,7 +71,7 @@ export const update: UpdateFn<FactoryModel, FactoryMsg, FactoryEffect> = (
     }
 };
 
-function handleTick(model: FactoryModel, delta: number, ctx: UpdateContext): UpdateResult<FactoryModel, FactoryEffect> {
+function handleTick(model: FactoryModel, delta: number): UpdateResult<FactoryModel, FactoryEffect> {
     let nextCredits = model.credits;
     const nextMachines = { ...model.machines };
 
