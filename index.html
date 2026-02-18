@@ -3,9 +3,17 @@
 
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>Causal Factory: Evolution</title>
     <style>
+        :root {
+            --safe-top: env(safe-area-inset-top, 20px);
+            --safe-bottom: env(safe-area-inset-bottom, 20px);
+            --safe-left: env(safe-area-inset-left, 20px);
+            --safe-right: env(safe-area-inset-right, 20px);
+        }
+
         body,
         html {
             margin: 0;
@@ -13,40 +21,68 @@
             overflow: hidden;
             background: #101010;
             color: #eee;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            touch-action: none;
+            /* Prevent browser zoom/scroll */
         }
 
         canvas {
             display: block;
+            width: 100vw;
+            height: 100vh;
         }
 
         #ui-overlay {
             position: absolute;
-            top: 20px;
-            left: 20px;
+            top: var(--safe-top);
+            left: var(--safe-left);
             pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
         }
 
         .metric {
-            margin-bottom: 8px;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 6px 12px;
-            border-radius: 4px;
-            border-left: 4px solid #4a9eff;
-            font-family: monospace;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            padding: 4px 8px;
+            border-radius: 6px;
+            border-left: 3px solid #4a9eff;
+            font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 12px;
+            color: #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
 
         #shop {
             position: absolute;
-            bottom: 20px;
-            left: 20px;
+            bottom: var(--safe-bottom);
+            left: var(--safe-left);
+            right: var(--safe-right);
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid #333;
+            gap: 8px;
+            background: rgba(20, 20, 20, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 12px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-width: 600px;
+            /* Constrain on desktop */
+            margin: 0 auto;
+            /* Center on desktop */
+        }
+
+        @media (min-width: 768px) {
+            #shop {
+                left: 50%;
+                transform: translateX(-50%);
+                width: auto;
+                min-width: 500px;
+                bottom: 30px;
+            }
         }
 
         .shop-row {
@@ -55,23 +91,36 @@
             align-items: center;
         }
 
-        button {
-            background: #333;
+        .shop-row button {
+            background: rgba(255, 255, 255, 0.1);
             color: #fff;
-            border: 1px solid #555;
-            padding: 8px 12px;
-            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 12px 16px;
+            /* Larger touch target */
+            border-radius: 8px;
             cursor: pointer;
-            transition: all 0.2s;
+            font-weight: 500;
+            font-size: 14px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            flex: 1;
+            /* Stretch buttons */
+            min-height: 44px;
+            /* Apple Human Interface Guidelines */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
         }
 
-        button:hover {
-            background: #4a9eff;
-            border-color: #fff;
+        .shop-row button:hover {
+            background: rgba(74, 158, 255, 0.2);
+            border-color: #4a9eff;
+            transform: translateY(-1px);
         }
 
         button:active {
-            transform: translateY(2px);
+            transform: scale(0.96);
+            background: rgba(74, 158, 255, 0.3);
         }
 
         .price {
