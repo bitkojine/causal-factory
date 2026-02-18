@@ -4,6 +4,7 @@ import { update } from './core/update.js';
 import { subscriptions } from './core/subscriptions.js';
 import { FactoryModel } from './core/types.js';
 import { CanvasRenderer } from './ui/renderer.js';
+import { AutoPilot } from './core/autopilot.js';
 
 const initialModel: FactoryModel = {
     machines: {},
@@ -19,6 +20,7 @@ const renderer = new CanvasRenderer('app');
 
 let lastTime = performance.now();
 let tickTimes: number[] = [];
+let latestSnapshot: FactoryModel = initialModel;
 
 const dispatcher = createDispatcher({
     model: initialModel,
@@ -37,10 +39,20 @@ const dispatcher = createDispatcher({
 
         const avgTickTime = tickTimes.reduce((a, b) => a + b, 0) / tickTimes.length;
         renderer.render(snapshot, { tickTime: avgTickTime, fps: Math.round(1000 / tickTime) });
+
+        latestSnapshot = snapshot;
         lastTime = now;
     },
     devMode: true,
 });
+
+const autopilot = new AutoPilot((msg) => dispatcher.dispatch(msg));
+
+setInterval(() => {
+    autopilot.tick(latestSnapshot);
+}, 1000);
+
+(window as any).toggleAutoPilot = () => autopilot.setEnabled(!autopilot.isEnabled());
 
 // Setup Initial Industrial Zone
 const setupScenario = () => {
