@@ -1,252 +1,295 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
-<head>
+  <head>
     <meta charset="UTF-8" />
-    <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
     <title>Causal Factory: Evolution</title>
     <style>
-        :root {
-            --safe-top: env(safe-area-inset-top, 20px);
-            --safe-bottom: env(safe-area-inset-bottom, 20px);
-            --safe-left: env(safe-area-inset-left, 20px);
-            --safe-right: env(safe-area-inset-right, 20px);
-        }
+      :root {
+        --safe-top: env(safe-area-inset-top, 20px);
+        --safe-bottom: env(safe-area-inset-bottom, 20px);
+        --safe-left: env(safe-area-inset-left, 20px);
+        --safe-right: env(safe-area-inset-right, 20px);
+      }
 
-        body,
-        html {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            background: #101010;
-            color: #eee;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            touch-action: none;
-            /* Prevent browser zoom/scroll */
-        }
+      body,
+      html {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background: #101010;
+        color: #eee;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+          Arial, sans-serif;
+        touch-action: none;
+        /* Prevent browser zoom/scroll */
+      }
 
-        canvas {
-            display: block;
-            width: 100vw;
-            height: 100vh;
-        }
+      canvas {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+      }
 
-        #ui-overlay {
-            position: absolute;
-            top: var(--safe-top);
-            left: var(--safe-left);
-            pointer-events: none;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
+      #ui-overlay {
+        position: absolute;
+        top: var(--safe-top);
+        left: var(--safe-left);
+        pointer-events: none;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
 
-        .metric {
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(4px);
-            -webkit-backdrop-filter: blur(4px);
-            padding: 4px 8px;
-            border-radius: 6px;
-            border-left: 3px solid #4a9eff;
-            font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
-            font-size: 12px;
-            color: #fff;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
+      .metric {
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        padding: 4px 8px;
+        border-radius: 6px;
+        border-left: 3px solid #4a9eff;
+        font-family:
+          "SF Mono", SFMono-Regular, Consolas, "Liberation Mono", Menlo,
+          monospace;
+        font-size: 12px;
+        color: #fff;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
 
+      #shop {
+        position: absolute;
+        bottom: var(--safe-bottom);
+        left: var(--safe-left);
+        right: var(--safe-right);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        background: rgba(20, 20, 20, 0.85);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        padding: 12px;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        max-width: 600px;
+        /* Constrain on desktop */
+        margin: 0 auto;
+        /* Center on desktop */
+      }
+
+      @media (min-width: 768px) {
         #shop {
-            position: absolute;
-            bottom: var(--safe-bottom);
-            left: var(--safe-left);
-            right: var(--safe-right);
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            background: rgba(20, 20, 20, 0.85);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            padding: 12px;
-            border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            max-width: 600px;
-            /* Constrain on desktop */
-            margin: 0 auto;
-            /* Center on desktop */
+          left: 50%;
+          transform: translateX(-50%);
+          width: auto;
+          min-width: 500px;
+          bottom: 30px;
         }
+      }
 
-        @media (min-width: 768px) {
-            #shop {
-                left: 50%;
-                transform: translateX(-50%);
-                width: auto;
-                min-width: 500px;
-                bottom: 30px;
-            }
-        }
+      .shop-row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
 
-        .shop-row {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
+      .shop-row button {
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 12px 16px;
+        /* Larger touch target */
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 14px;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        flex: 1;
+        /* Stretch buttons */
+        min-height: 44px;
+        /* Apple Human Interface Guidelines */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+      }
 
-        .shop-row button {
-            background: rgba(255, 255, 255, 0.1);
-            color: #fff;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 12px 16px;
-            /* Larger touch target */
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 500;
-            font-size: 14px;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            flex: 1;
-            /* Stretch buttons */
-            min-height: 44px;
-            /* Apple Human Interface Guidelines */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-        }
+      .shop-row button:hover {
+        background: rgba(74, 158, 255, 0.2);
+        border-color: #4a9eff;
+        transform: translateY(-1px);
+      }
 
-        .shop-row button:hover {
-            background: rgba(74, 158, 255, 0.2);
-            border-color: #4a9eff;
-            transform: translateY(-1px);
-        }
+      button:active {
+        transform: scale(0.96);
+        background: rgba(74, 158, 255, 0.3);
+      }
 
-        button:active {
-            transform: scale(0.96);
-            background: rgba(74, 158, 255, 0.3);
-        }
+      .price {
+        font-size: 0.8em;
+        color: #aaa;
+      }
 
-        .price {
-            font-size: 0.8em;
-            color: #aaa;
-        }
-
-        .title {
-            font-weight: bold;
-            color: #ffcc00;
-            margin-bottom: 5px;
-        }
+      .title {
+        font-weight: bold;
+        color: #ffcc00;
+        margin-bottom: 5px;
+      }
     </style>
-</head>
+  </head>
 
-<body>
+  <body>
     <div id="app"></div>
     <div id="ui-overlay"></div>
-    <button id="btn-hide-ui" onclick="toggleUI()"
-        style="position: absolute; top: 20px; right: 20px; z-index: 1000; background: rgba(0,0,0,0.5); color: #fff; border: 1px solid #555; padding: 8px 12px; border-radius: 4px; cursor: pointer;">Hide
-        UI</button>
+    <button
+      id="btn-hide-ui"
+      onclick="toggleUI()"
+      style="
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        background: rgba(0, 0, 0, 0.5);
+        color: #fff;
+        border: 1px solid #555;
+        padding: 8px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+      "
+    >
+      Hide UI
+    </button>
 
     <div id="shop">
-        <div class="title">INDUSTRIAL FABRICATION SHOP</div>
-        <button id="btn-autopilot" onclick="toggleAutoPilotUI()"
-            style="margin-bottom: 8px; background: #333; border: 1px solid #555;">ENABLE AUTO-PILOT</button>
-        <button id="btn-turbo" onclick="toggleTurbo()"
-            style="margin-bottom: 8px; background: #333; border: 1px solid #555;">TURBO MODE (x1000)</button>
-        <div class="shop-row">
-            <button onclick="window.buyMachine('extractor')">Buy Extractor</button>
-            <span class="price">$100</span>
-        </div>
-        <div class="shop-row">
-            <button onclick="window.buyMachine('smelter')">Buy Smelter</button>
-            <span class="price">$500</span>
-        </div>
-        <div class="shop-row">
-            <button onclick="window.buyMachine('assembler')">Buy Assembler</button>
-            <span class="price">$1200</span>
-        </div>
-        <div class="shop-row">
-            <button onclick="window.buyMachine('extractor_copper')">Copper Extractor</button>
-            <span class="price">$100</span>
-        </div>
-        <div class="shop-row">
-            <button onclick="window.buyMachine('smelter_copper')">Copper Smelter</button>
-            <span class="price">$500</span>
-        </div>
-        <div class="shop-row">
-            <button onclick="window.buyMachine('assembler_advanced')">Adv. Assembler</button>
-            <span class="price">$3000</span>
-        </div>
-        <div style="height: 10px; border-top: 1px solid #333; margin-top: 5px;"></div>
-        <div class="shop-row">
-            <button onclick="window.spawnBots(100)">+100 Bots</button>
-            <button onclick="window.spawnBots(1000)">+1000 Bots</button>
-        </div>
-        <div class="shop-row">
-            <button onclick="window.toggleStress()" style="background: #900;">BURN-IN STRESS TEST</button>
-            <button onclick="window.triggerMarketCrash()" style="background: #f80;">TRIGGER EVENT STORM</button>
-            <button onclick="window.triggerReplay()" style="background: #060;">VERIFY DETERMINISM</button>
-        </div>
+      <div class="title">INDUSTRIAL FABRICATION SHOP</div>
+      <button
+        id="btn-autopilot"
+        onclick="toggleAutoPilotUI()"
+        style="margin-bottom: 8px; background: #333; border: 1px solid #555"
+      >
+        ENABLE AUTO-PILOT
+      </button>
+      <button
+        id="btn-turbo"
+        onclick="toggleTurbo()"
+        style="margin-bottom: 8px; background: #333; border: 1px solid #555"
+      >
+        TURBO MODE (x1000)
+      </button>
+      <div class="shop-row">
+        <button onclick="window.buyMachine('extractor')">Buy Extractor</button>
+        <span class="price">$100</span>
+      </div>
+      <div class="shop-row">
+        <button onclick="window.buyMachine('smelter')">Buy Smelter</button>
+        <span class="price">$500</span>
+      </div>
+      <div class="shop-row">
+        <button onclick="window.buyMachine('assembler')">Buy Assembler</button>
+        <span class="price">$1200</span>
+      </div>
+      <div class="shop-row">
+        <button onclick="window.buyMachine('extractor_copper')">
+          Copper Extractor
+        </button>
+        <span class="price">$100</span>
+      </div>
+      <div class="shop-row">
+        <button onclick="window.buyMachine('smelter_copper')">
+          Copper Smelter
+        </button>
+        <span class="price">$500</span>
+      </div>
+      <div class="shop-row">
+        <button onclick="window.buyMachine('assembler_advanced')">
+          Adv. Assembler
+        </button>
+        <span class="price">$3000</span>
+      </div>
+      <div
+        style="height: 10px; border-top: 1px solid #333; margin-top: 5px"
+      ></div>
+      <div class="shop-row">
+        <button onclick="window.spawnBots(100)">+100 Bots</button>
+        <button onclick="window.spawnBots(1000)">+1000 Bots</button>
+      </div>
+      <div class="shop-row">
+        <button onclick="window.toggleStress()" style="background: #900">
+          BURN-IN STRESS TEST
+        </button>
+        <button onclick="window.triggerMarketCrash()" style="background: #f80">
+          TRIGGER EVENT STORM
+        </button>
+        <button onclick="window.triggerReplay()" style="background: #060">
+          VERIFY DETERMINISM
+        </button>
+      </div>
     </div>
 
     <script type="module" src="/src/main.ts"></script>
     <script>
-        function toggleAutoPilotUI() {
-            if (window.toggleAutoPilot) {
-                const enabled = window.toggleAutoPilot(); // Assume it returns new state or we track it
-                // Actually main.ts toggleAutoPilot returns void currently in my code.
-                // Let's just toggle UI based on button state for now, assuming success.
-                const btn = document.getElementById('btn-autopilot');
-                if (btn.innerText.includes('ENABLE')) {
-                    btn.innerText = 'AUTO-PILOT ACTIVE';
-                    btn.style.background = '#00aa00';
-                } else {
-                    btn.innerText = 'ENABLE AUTO-PILOT';
-                    btn.style.background = '#333';
-                }
-            } else {
-                console.warn('AutoPilot not loaded yet');
-            }
+      function toggleAutoPilotUI() {
+        if (window.toggleAutoPilot) {
+          const enabled = window.toggleAutoPilot(); // Assume it returns new state or we track it
+          // Actually main.ts toggleAutoPilot returns void currently in my code.
+          // Let's just toggle UI based on button state for now, assuming success.
+          const btn = document.getElementById("btn-autopilot");
+          if (btn.innerText.includes("ENABLE")) {
+            btn.innerText = "AUTO-PILOT ACTIVE";
+            btn.style.background = "#00aa00";
+          } else {
+            btn.innerText = "ENABLE AUTO-PILOT";
+            btn.style.background = "#333";
+          }
+        } else {
+          console.warn("AutoPilot not loaded yet");
         }
+      }
 
-        window.turboEnabled = false;
-        window.toggleTurbo = () => {
-            window.turboEnabled = !window.turboEnabled;
-            const btn = document.getElementById('btn-turbo');
-            /* 
+      window.turboEnabled = false;
+      window.toggleTurbo = () => {
+        window.turboEnabled = !window.turboEnabled;
+        const btn = document.getElementById("btn-turbo");
+        /* 
                We need to dispatch 'set_speed' to the game.
                Since we don't have direct access to 'dispatcher' here (it's in module scope in main.ts),
                we need to expose a helper in main.ts or hack it. 
                
                Actually, we can use the window.setSpeed helper if we create it.
             */
-            if (window.setGameSpeed) {
-                window.setGameSpeed(window.turboEnabled ? 1000 : 1);
-            }
-
-            if (window.turboEnabled) {
-                btn.innerText = 'TURBO ACTIVE (x1000)';
-                btn.style.background = '#d00';
-            } else {
-                btn.innerText = 'TURBO MODE (x1000)';
-                btn.style.background = '#333';
-            }
+        if (window.setGameSpeed) {
+          window.setGameSpeed(window.turboEnabled ? 1000 : 1);
         }
 
-        window.toggleUI = () => {
-            const overlay = document.getElementById('ui-overlay');
-            const shop = document.getElementById('shop');
-            const btn = document.getElementById('btn-hide-ui');
-
-            if (overlay.style.display === 'none') {
-                overlay.style.display = 'flex';
-                shop.style.display = 'flex';
-                btn.innerText = 'Hide UI';
-                btn.style.opacity = '1';
-            } else {
-                overlay.style.display = 'none';
-                shop.style.display = 'none';
-                btn.innerText = 'Show UI';
-                btn.style.opacity = '0.3'; // Make button subtle when playing
-            }
+        if (window.turboEnabled) {
+          btn.innerText = "TURBO ACTIVE (x1000)";
+          btn.style.background = "#d00";
+        } else {
+          btn.innerText = "TURBO MODE (x1000)";
+          btn.style.background = "#333";
         }
+      };
+
+      window.toggleUI = () => {
+        const overlay = document.getElementById("ui-overlay");
+        const shop = document.getElementById("shop");
+        const btn = document.getElementById("btn-hide-ui");
+
+        if (overlay.style.display === "none") {
+          overlay.style.display = "flex";
+          shop.style.display = "flex";
+          btn.innerText = "Hide UI";
+          btn.style.opacity = "1";
+        } else {
+          overlay.style.display = "none";
+          shop.style.display = "none";
+          btn.innerText = "Show UI";
+          btn.style.opacity = "0.3"; // Make button subtle when playing
+        }
+      };
     </script>
-</body>
-
+  </body>
 </html>
