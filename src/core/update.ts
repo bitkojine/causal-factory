@@ -36,7 +36,7 @@ export const update: UpdateFn<FactoryModel, FactoryMsg, FactoryEffect> = (
             return {
                 model: {
                     ...model,
-                    bots: [...model.bots, ...spawnBots(msg.count, model, ctx)],
+                    bots: { ...model.bots, ...spawnBots(msg.count, model, ctx) },
                 },
                 effects: [],
             };
@@ -64,11 +64,24 @@ export const update: UpdateFn<FactoryModel, FactoryMsg, FactoryEffect> = (
                 },
                 effects: [],
             };
-        case 'market_crash':
+        case 'market_crash': {
+            const resetBots: Record<string, Bot> = {};
+            for (const id in model.bots) {
+                resetBots[id] = { ...model.bots[id], state: { kind: 'idle' } as BotState };
+            }
+            return {
+                model: { ...model, bots: resetBots },
+                effects: [],
+            };
+        }
+        case 'reset_bot':
             return {
                 model: {
                     ...model,
-                    bots: model.bots.map(b => ({ ...b, state: { kind: 'idle' } as BotState })),
+                    bots: {
+                        ...model.bots,
+                        [msg.botId]: { ...model.bots[msg.botId], state: { kind: 'idle' } as BotState },
+                    },
                 },
                 effects: [],
             };
@@ -157,31 +170,36 @@ function handleTick(model: FactoryModel, delta: number): UpdateResult<FactoryMod
     supply.sort((a, b) => b.count - a.count);
 
     // 3. Update Bots
-    const nextBots: Bot[] = model.bots.map(bot => {
+    const nextBots: Record<string, Bot> = {};
+    for (const id in model.bots) {
+        const bot = model.bots[id];
         switch (bot.state.kind) {
             case 'idle':
                 if (bot.payload) {
                     const target = demand.find(d => d.resource === bot.payload);
                     if (target) {
-                        return {
+                        nextBots[id] = {
                             ...bot,
                             state: { kind: 'moving_to_deliver', machineId: target.machineId, resource: target.resource } as BotState
                         };
+                        break;
                     }
                 } else {
                     const target = supply.find(_ => true);
                     if (target) {
-                        return {
+                        nextBots[id] = {
                             ...bot,
                             state: { kind: 'moving_to_pickup', machineId: target.machineId, resource: target.resource } as BotState
                         };
+                        break;
                     }
                 }
-                return bot;
+                nextBots[id] = bot;
+                break;
 
             case 'moving_to_pickup': {
                 const target = nextMachines[bot.state.machineId];
-                if (!target) return { ...bot, state: { kind: 'idle' } as BotState };
+                if (!target) { nextBots[id] = { ...bot, state: { kind: 'idle' } as BotState }; break; }
 
                 const { x, y, arrived } = moveTowards(bot.x, bot.y, target.x, target.y, delta * 5);
                 if (arrived) {
@@ -189,30 +207,36 @@ function handleTick(model: FactoryModel, delta: number): UpdateResult<FactoryMod
                         const nextInv = { ...target.inventory };
                         nextInv[bot.state.resource]--;
                         nextMachines[target.id] = { ...target, inventory: nextInv };
-                        return { ...bot, x, y, payload: bot.state.resource, state: { kind: 'idle' } as BotState };
+                        nextBots[id] = { ...bot, x, y, payload: bot.state.resource, state: { kind: 'idle' } as BotState };
+                    } else {
+                        nextBots[id] = { ...bot, x, y, state: { kind: 'idle' } as BotState };
                     }
-                    return { ...bot, x, y, state: { kind: 'idle' } as BotState };
+                } else {
+                    nextBots[id] = { ...bot, x, y };
                 }
-                return { ...bot, x, y };
+                break;
             }
 
             case 'moving_to_deliver': {
                 const target = nextMachines[bot.state.machineId];
-                if (!target) return { ...bot, state: { kind: 'idle' } as BotState };
+                if (!target) { nextBots[id] = { ...bot, state: { kind: 'idle' } as BotState }; break; }
 
                 const { x, y, arrived } = moveTowards(bot.x, bot.y, target.x, target.y, delta * 5);
                 if (arrived) {
                     const nextInv = { ...target.inventory };
                     nextInv[bot.state.resource] = (nextInv[bot.state.resource] || 0) + 1;
                     nextMachines[target.id] = { ...target, inventory: nextInv };
-                    return { ...bot, x, y, payload: undefined, state: { kind: 'idle' } as BotState };
+                    nextBots[id] = { ...bot, x, y, payload: undefined, state: { kind: 'idle' } as BotState };
+                } else {
+                    nextBots[id] = { ...bot, x, y };
                 }
-                return { ...bot, x, y };
+                break;
             }
             default:
-                return bot;
+                nextBots[id] = bot;
+                break;
         }
-    });
+    }
 
     return {
         model: {
@@ -238,15 +262,17 @@ function moveTowards(x: number, y: number, tx: number, ty: number, speed: number
     };
 }
 
-function spawnBots(count: number, model: FactoryModel, ctx: UpdateContext): Bot[] {
-    const bots: Bot[] = [];
+function spawnBots(count: number, model: FactoryModel, ctx: UpdateContext): Record<string, Bot> {
+    const existingCount = Object.keys(model.bots).length;
+    const bots: Record<string, Bot> = {};
     for (let i = 0; i < count; i++) {
-        bots.push({
-            id: `bot-${model.bots.length + i}`,
+        const id = `bot-${existingCount + i}`;
+        bots[id] = {
+            id,
             x: ctx.random() * 800,
             y: ctx.random() * 600,
             state: { kind: 'idle' },
-        });
+        };
     }
     return bots;
 }

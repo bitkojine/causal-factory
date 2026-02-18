@@ -8,7 +8,7 @@ import { AutoPilot } from './core/autopilot.js';
 
 const initialModel: FactoryModel = {
     machines: {},
-    bots: [],
+    bots: {},
     credits: 1000,
     gridWidth: 50,
     gridHeight: 50,

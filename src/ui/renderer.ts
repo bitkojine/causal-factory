@@ -75,7 +75,7 @@ export class CanvasRenderer {
 
         // Render bots (batched)
         ctx.fillStyle = '#ffcc00';
-        for (const bot of snapshot.bots) {
+        for (const bot of Object.values(snapshot.bots)) {
             if (bot.payload) {
                 ctx.fillStyle = '#00ff00'; // Carrying
                 ctx.fillRect(bot.x - 3, bot.y - 3, 6, 6);
@@ -130,7 +130,7 @@ export class CanvasRenderer {
             overlay.innerHTML = `
 
         <div class="metric" style="color: #ffcc00; font-size: 1.2em; font-weight: bold; border-left-color: #ffcc00;">Credits: $${snapshot.credits}</div>
-      <div class="metric">Bots: ${snapshot.bots.length}</div>
+      <div class="metric">Bots: ${Object.keys(snapshot.bots).length}</div>
       <div class="metric">Machines: ${Object.keys(snapshot.machines).length}</div>
       <div class="metric">Tick Time: ${metrics.tickTime.toFixed(2)}ms</div>
       <div class="metric">FPS: ${metrics.fps}</div>
