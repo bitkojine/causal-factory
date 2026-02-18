@@ -1,4 +1,4 @@
-import { createDispatcher } from '@causaloop/core';
+import { createDispatcher, replay } from '@causaloop/core';
 import { BrowserRunner } from '@causaloop/platform-browser';
 import { update } from './core/update.js';
 import { subscriptions } from './core/subscriptions.js';
@@ -85,17 +85,14 @@ let stressInterval: any = null;
 
     const startTime = performance.now();
 
-    // Create a fresh dispatcher for replay
-    const replayDispatcher = createDispatcher({
-        model: initialModel,
+    // Use the dedicated replay utility which synchronously processes the log
+    const replayedSnapshot = replay({
+        initialModel: initialModel,
         update,
-        effectRunner: () => { }, // No side effects during benchmark replay
-        initialLog: log,
-        devMode: false,
+        log,
     });
 
     const duration = performance.now() - startTime;
-    const replayedSnapshot = replayDispatcher.getSnapshot();
 
     // Verify determinism
     const isMatch = JSON.stringify(finalSnapshot) === JSON.stringify(replayedSnapshot);
