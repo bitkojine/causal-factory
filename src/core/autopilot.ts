@@ -1,11 +1,11 @@
 
-import { FactoryModel, MachineType } from './types.js';
+import { FactoryModel, FactoryMsg, MachineType } from './types.js';
 
 export class AutoPilot {
-    private dispatch: (msg: any) => void;
+    private dispatch: (msg: FactoryMsg) => void;
     private enabled: boolean = false;
 
-    constructor(dispatch: (msg: any) => void) {
+    constructor(dispatch: (msg: FactoryMsg) => void) {
         this.dispatch = dispatch;
     }
 

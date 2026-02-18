@@ -1,4 +1,4 @@
-import { Effect, Model } from '@causaloop/core';
+import { CoreEffect, Model } from '@causaloop/core';
 
 export type Resource = 'iron_ore' | 'iron_plate' | 'gear' | 'copper_ore' | 'copper_wire' | 'compute_core';
 
@@ -48,4 +48,4 @@ export type FactoryMsg =
     | { readonly kind: 'set_stress'; readonly level: number }
     | { readonly kind: 'set_speed'; readonly speed: number };
 
-export type FactoryEffect = Effect;
+export type FactoryEffect = CoreEffect<FactoryMsg>;
