@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite';
+import path from 'path';
 
 export default defineConfig({
     root: '.',
@@ -7,8 +8,8 @@ export default defineConfig({
     },
     resolve: {
         alias: {
-            '@causaloop/core': '/Users/name/trusted-git/public-repos/battle-tester/causaloop-repo/packages/core/src',
-            '@causaloop/platform-browser': '/Users/name/trusted-git/public-repos/battle-tester/causaloop-repo/packages/platform-browser/src',
+            '@causaloop/core': path.resolve(__dirname, '../causaloop-repo/packages/core/src'),
+            '@causaloop/platform-browser': path.resolve(__dirname, '../causaloop-repo/packages/platform-browser/src'),
         },
     },
 });

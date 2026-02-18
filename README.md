@@ -18,6 +18,21 @@ Causal Factory is a deterministic simulation of a resource-gathering bot swarm. 
 - [Node.js](https://nodejs.org/) >= 20.0.0
 - [pnpm](https://pnpm.io/) >= 10.0.0
 
+> [!IMPORTANT]
+> **Folder Structure**: This demo requires the `causaloop` repository to be present as a sister folder. The expected structure is:
+> ```text
+> .
+> ├── causal-factory/   (this repo)
+> └── causaloop-repo/    (the causaloop source)
+> ```
+
+### Live-Link Architecture
+The game is configured to find `causaloop` source files directly on your machine, rather than using a pre-built version from `node_modules`. This is achieved through:
+- **TypeScript Paths**: `tsconfig.json` maps `@causaloop/*` to `../causaloop-repo/packages/*/src`.
+- **Vite Aliases**: `vite.config.ts` ensures the dev server pulls code directly from the library source.
+
+This allows you to modify the library and see changes in the game instantly.
+
 ### Installation
 1.  Clone the repository and its submodules.
 2.  Install dependencies:
