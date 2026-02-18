@@ -6,54 +6,18 @@ on:
   pull_request:
     branches: [ main ]
 
-jobs:
-  build-and-test:
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout main repo
-      uses: actions/checkout@v4
-      
-    - name: Checkout causaloop repo
-      uses: actions/checkout@v4
-      with:
-        repository: bitkojine/causaloop
-        path: causaloop-repo
-        
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        
-    - name: Setup pnpm
-      uses: pnpm/action-setup@v4
-      with:
-        version: latest
-        
-    - name: Install causaloop dependencies
-      run: |
-        cd ../causaloop-repo
-        pnpm install
-        
-    - name: Install game dependencies
-      run: pnpm install
-        
-    - name: Type check
-      run: pnpm run tsc --noEmit
-        
-    - name: Build game
-      run: pnpm run build
-        
-    - name: Verify build output
-      run: ls -la dist/
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
     runs-on: ubuntu-latest
-    needs: build-and-test
-    if: github.ref == 'refs/heads/main'
     
     steps:
     - name: Checkout main repo
@@ -92,8 +56,17 @@ jobs:
     - name: Upload artifact
       uses: actions/upload-pages-artifact@v3
       with:
-        path: ./dist
-        
+path: ./dist
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
     - name: Deploy to GitHub Pages
       id: deployment
       uses: actions/deploy-pages@v4
