@@ -134,7 +134,10 @@ export const update: UpdateFn<FactoryModel, FactoryMsg, FactoryEffect> = (
     case "set_stress":
       return { model, effects: [] };
     case "toggle_autopilot":
-      return { model: { ...model, autoPilotEnabled: !model.autoPilotEnabled }, effects: [] };
+      return {
+        model: { ...model, autoPilotEnabled: !model.autoPilotEnabled },
+        effects: [],
+      };
     case "autopilot_tick":
       return handleAutoPilotTick(model, ctx);
     default:
@@ -142,7 +145,10 @@ export const update: UpdateFn<FactoryModel, FactoryMsg, FactoryEffect> = (
   }
 };
 
-function handleAutoPilotTick(model: FactoryModel, ctx: UpdateContext): UpdateResult<FactoryModel, FactoryEffect> {
+function handleAutoPilotTick(
+  model: FactoryModel,
+  ctx: UpdateContext,
+): UpdateResult<FactoryModel, FactoryEffect> {
   if (!model.autoPilotEnabled) return { model, effects: [] };
 
   let nextModel = model;
@@ -151,14 +157,20 @@ function handleAutoPilotTick(model: FactoryModel, ctx: UpdateContext): UpdateRes
   const allBots = Object.values(nextModel.bots);
   const totalBots = allBots.length;
   if (totalBots === 0) {
-    nextModel = { ...nextModel, bots: { ...nextModel.bots, ...spawnBots(10, nextModel, ctx) } };
+    nextModel = {
+      ...nextModel,
+      bots: { ...nextModel.bots, ...spawnBots(10, nextModel, ctx) },
+    };
   } else {
     const idleBots = allBots.filter((b) => b.state.kind === "idle").length;
     const idleRatio = idleBots / totalBots;
 
     if (idleRatio < 0.1 && totalBots < 2000) {
       const batch = Math.max(10, Math.floor(totalBots * 0.1));
-      nextModel = { ...nextModel, bots: { ...nextModel.bots, ...spawnBots(batch, nextModel, ctx) } };
+      nextModel = {
+        ...nextModel,
+        bots: { ...nextModel.bots, ...spawnBots(batch, nextModel, ctx) },
+      };
     }
   }
 
@@ -182,25 +194,46 @@ function handleAutoPilotTick(model: FactoryModel, ctx: UpdateContext): UpdateRes
       assembler: m.filter((x) => x.type === "assembler").length,
       extractor_copper: m.filter((x) => x.type === "extractor_copper").length,
       smelter_copper: m.filter((x) => x.type === "smelter_copper").length,
-      assembler_advanced: m.filter((x) => x.type === "assembler_advanced").length,
+      assembler_advanced: m.filter((x) => x.type === "assembler_advanced")
+        .length,
     };
 
     let buyType: MachineType | null = null;
-    if (counts.extractor < counts.smelter && nextModel.credits > COSTS.extractor + BUFFER) {
+    if (
+      counts.extractor < counts.smelter &&
+      nextModel.credits > COSTS.extractor + BUFFER
+    ) {
       buyType = "extractor";
-    } else if (counts.smelter < counts.extractor && nextModel.credits > COSTS.smelter + BUFFER) {
+    } else if (
+      counts.smelter < counts.extractor &&
+      nextModel.credits > COSTS.smelter + BUFFER
+    ) {
       buyType = "smelter";
-    } else if (counts.assembler < counts.smelter && nextModel.credits > COSTS.assembler + BUFFER) {
+    } else if (
+      counts.assembler < counts.smelter &&
+      nextModel.credits > COSTS.assembler + BUFFER
+    ) {
       buyType = "assembler";
     } else if (counts.assembler >= 3) {
-      if (counts.extractor_copper < counts.smelter_copper + 1 && nextModel.credits > COSTS.extractor_copper + BUFFER) {
+      if (
+        counts.extractor_copper < counts.smelter_copper + 1 &&
+        nextModel.credits > COSTS.extractor_copper + BUFFER
+      ) {
         buyType = "extractor_copper";
-      } else if (counts.smelter_copper < counts.extractor_copper && nextModel.credits > COSTS.smelter_copper + BUFFER) {
+      } else if (
+        counts.smelter_copper < counts.extractor_copper &&
+        nextModel.credits > COSTS.smelter_copper + BUFFER
+      ) {
         buyType = "smelter_copper";
       }
     }
 
-    if (!buyType && counts.assembler_advanced < Math.min(counts.assembler, counts.smelter_copper) && nextModel.credits > COSTS.assembler_advanced + BUFFER) {
+    if (
+      !buyType &&
+      counts.assembler_advanced <
+        Math.min(counts.assembler, counts.smelter_copper) &&
+      nextModel.credits > COSTS.assembler_advanced + BUFFER
+    ) {
       buyType = "assembler_advanced";
     }
 

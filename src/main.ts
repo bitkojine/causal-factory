@@ -46,7 +46,9 @@ if (overlayContainer) {
     view(snapshot, dispatcher.getMetrics()),
   );
   dispatcher.subscribe((snapshot) =>
-    uiRenderer.render(snapshot, (msg) => dispatcher.dispatch(msg as FactoryMsg)),
+    uiRenderer.render(snapshot, (msg) =>
+      dispatcher.dispatch(msg as FactoryMsg),
+    ),
   );
 }
 
@@ -70,7 +72,8 @@ declare global {
   }
 }
 
-window.toggleAutoPilot = () => dispatcher.dispatch({ kind: "toggle_autopilot" });
+window.toggleAutoPilot = () =>
+  dispatcher.dispatch({ kind: "toggle_autopilot" });
 window.setGameSpeed = (speed: number) =>
   dispatcher.dispatch({ kind: "set_speed", speed });
 

@@ -1,8 +1,16 @@
 import { AnimationFrameSubscription, TimerSubscription } from "@causaloop/core";
 import { FactoryModel, FactoryMsg } from "./types.js";
 
-export function subscriptions(model: FactoryModel): readonly (AnimationFrameSubscription<FactoryMsg> | TimerSubscription<FactoryMsg>)[] {
-  const subs: (AnimationFrameSubscription<FactoryMsg> | TimerSubscription<FactoryMsg>)[] = [
+export function subscriptions(
+  model: FactoryModel,
+): readonly (
+  | AnimationFrameSubscription<FactoryMsg>
+  | TimerSubscription<FactoryMsg>
+)[] {
+  const subs: (
+    | AnimationFrameSubscription<FactoryMsg>
+    | TimerSubscription<FactoryMsg>
+  )[] = [
     {
       kind: "animationFrame",
       key: "game-loop",
