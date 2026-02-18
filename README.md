@@ -1,6 +1,10 @@
-# Causal Factory: Evolution
+## 🚀 Quick Start (One-Command Setup)
 
-**Causal Factory** is a production-grade industrial logistics simulation designed specifically to stress test and showcase the `causaloop` deterministic engine.
+To clone and set up both the game and the required `causaloop` library in one go, run:
+
+```bash
+git clone https://github.com/bitkojine/causal-factory.git causal-factory && git clone https://github.com/bitkojine/causaloop.git causaloop-repo && cd causaloop-repo && pnpm install && cd ../causal-factory && pnpm install && pnpm run dev
+```
 
 ---
 

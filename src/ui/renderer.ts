@@ -1,6 +1,6 @@
 import { Snapshot } from '@causaloop/core';
 import { FactoryModel, MachineType } from '../core/types.js';
-import { __CAUSALOOP_DEV_IDENTITY__ } from '@causaloop/core';
+
 
 export class CanvasRenderer {
     private canvas: HTMLCanvasElement;
@@ -125,9 +125,7 @@ export class CanvasRenderer {
         const overlay = document.getElementById('ui-overlay');
         if (overlay) {
             overlay.innerHTML = `
-        <div class="metric" style="padding: 0; background: transparent; border: none;">
-            <pre style="margin: 0; color: #ffcc00; line-height: 1; font-size: 8px; font-family: monospace;">${__CAUSALOOP_DEV_IDENTITY__}</pre>
-        </div>
+
         <div class="metric" style="color: #ffcc00; font-size: 1.2em; font-weight: bold; border-left-color: #ffcc00;">Credits: $${snapshot.credits}</div>
       <div class="metric">Bots: ${snapshot.bots.length}</div>
       <div class="metric">Machines: ${Object.keys(snapshot.machines).length}</div>
