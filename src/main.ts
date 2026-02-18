@@ -4,6 +4,7 @@ import { update } from './core/update.js';
 import { subscriptions } from './core/subscriptions.js';
 import { FactoryModel } from './core/types.js';
 import { CanvasRenderer } from './ui/renderer.js';
+import { AutoPilot } from './core/autopilot.js';
 
 const initialModel: FactoryModel = {
     machines: {},
@@ -12,6 +13,7 @@ const initialModel: FactoryModel = {
     gridWidth: 50,
     gridHeight: 50,
     tickCount: 0,
+    speedMultiplier: 1,
 };
 
 const runner = new BrowserRunner();
@@ -19,6 +21,7 @@ const renderer = new CanvasRenderer('app');
 
 let lastTime = performance.now();
 let tickTimes: number[] = [];
+let latestSnapshot: FactoryModel = initialModel;
 
 const dispatcher = createDispatcher({
     model: initialModel,
@@ -37,10 +40,21 @@ const dispatcher = createDispatcher({
 
         const avgTickTime = tickTimes.reduce((a, b) => a + b, 0) / tickTimes.length;
         renderer.render(snapshot, { tickTime: avgTickTime, fps: Math.round(1000 / tickTime) });
+
+        latestSnapshot = snapshot;
         lastTime = now;
     },
     devMode: true,
 });
+
+const autopilot = new AutoPilot((msg) => dispatcher.dispatch(msg));
+
+setInterval(() => {
+    autopilot.tick(latestSnapshot);
+}, 100); // 10x faster checking for turbo mode compatibility
+
+(window as any).toggleAutoPilot = () => autopilot.setEnabled(!autopilot.isEnabled());
+(window as any).setGameSpeed = (speed: number) => dispatcher.dispatch({ kind: 'set_speed', speed });
 
 // Setup Initial Industrial Zone
 const setupScenario = () => {

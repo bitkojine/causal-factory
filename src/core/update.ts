@@ -6,6 +6,9 @@ const MACHINE_SPECS: Record<MachineType, { cost: number; inputs: Resource[]; out
     smelter: { cost: 500, inputs: ['iron_ore'], outputs: ['iron_plate'], speed: 0.03 },
     assembler: { cost: 1200, inputs: ['iron_plate'], outputs: ['gear'], speed: 0.02 },
     sink: { cost: 0, inputs: ['gear'], outputs: [], speed: 1.0 },
+    extractor_copper: { cost: 100, inputs: [], outputs: ['copper_ore'], speed: 0.05 },
+    smelter_copper: { cost: 500, inputs: ['copper_ore'], outputs: ['copper_wire'], speed: 0.03 },
+    assembler_advanced: { cost: 3000, inputs: ['gear', 'copper_wire'], outputs: ['compute_core'], speed: 0.01 },
 };
 
 export const update: UpdateFn<FactoryModel, FactoryMsg, FactoryEffect> = (
@@ -13,9 +16,14 @@ export const update: UpdateFn<FactoryModel, FactoryMsg, FactoryEffect> = (
     msg: FactoryMsg,
     ctx: UpdateContext,
 ): UpdateResult<FactoryModel, FactoryEffect> => {
+    // Basic init if missing
+    // const currentSpeed = model.speedMultiplier || 1;
+
     switch (msg.kind) {
         case 'tick':
             return handleTick(model, msg.delta);
+        case 'set_speed':
+            return { model: { ...model, speedMultiplier: msg.speed }, effects: [] };
         case 'add_machine':
             return {
                 model: {
@@ -76,22 +84,50 @@ function handleTick(model: FactoryModel, delta: number): UpdateResult<FactoryMod
     const nextMachines = { ...model.machines };
 
     // 1. Process Machines
+    // Scale delta by speed multiplier
+    const effectiveDelta = delta * (model.speedMultiplier || 1);
+
     for (const id in nextMachines) {
         const m = nextMachines[id];
         const canProcess = m.inputRequirements.every(r => (m.inventory[r] || 0) > 0);
 
         if (canProcess && (m.type !== 'sink' || m.inputRequirements.length > 0)) {
-            const nextProgress = m.progress + m.speed * delta;
-            if (nextProgress >= 100) {
+            let nextProgress = m.progress + m.speed * effectiveDelta;
+            let producedCount = 0;
+
+            // BATCH PROCESSING: If speed is high, we might produce multiple items in one tick
+            while (nextProgress >= 100) {
+                producedCount++;
+                nextProgress -= 100;
+
+                // If we run out of inputs during batch, stop
+                // But for simplicity/performance in turbo mode, let's just do a greedy check?
+                // Actually, precise batching requires checking inputs every sub-step.
+                // Let's do a simplified version: calculate max possible production based on inputs.
+
+                // How many can we afford?
+                const maxAfford = m.inputRequirements.length > 0
+                    ? Math.min(...m.inputRequirements.map(r => m.inventory[r] || 0))
+                    : 999999; // Infinite inputs for extractors
+
+                if (producedCount > maxAfford) {
+                    // We can't actually produce this one
+                    producedCount--;
+                    nextProgress = 0; // Stuck at 0 progress waiting for inputs
+                    break;
+                }
+            }
+
+            if (producedCount > 0) {
                 const nextInv = { ...m.inventory };
-                m.inputRequirements.forEach(r => { nextInv[r] = (nextInv[r] || 1) - 1; });
-                m.outputs.forEach(r => { nextInv[r] = (nextInv[r] || 0) + 1; });
+                m.inputRequirements.forEach(r => { nextInv[r] = (nextInv[r] || 0) - producedCount; });
+                m.outputs.forEach(r => { nextInv[r] = (nextInv[r] || 0) + producedCount; });
 
                 if (m.type === 'sink') {
-                    nextCredits += 50;
+                    nextCredits += 50 * producedCount;
                 }
 
-                nextMachines[id] = { ...m, progress: 0, inventory: nextInv };
+                nextMachines[id] = { ...m, progress: nextProgress, inventory: nextInv };
             } else {
                 nextMachines[id] = { ...m, progress: nextProgress };
             }
@@ -99,18 +135,26 @@ function handleTick(model: FactoryModel, delta: number): UpdateResult<FactoryMod
     }
 
     // 2. Identify Supply and Demand
-    const supply: { machineId: string; resource: Resource }[] = [];
-    const demand: { machineId: string; resource: Resource }[] = [];
+    const supply: { machineId: string; resource: Resource; count: number }[] = [];
+    const demand: { machineId: string; resource: Resource; count: number }[] = [];
 
     for (const id in nextMachines) {
         const m = nextMachines[id];
         m.outputs.forEach(r => {
-            if ((m.inventory[r] || 0) > 0) supply.push({ machineId: id, resource: r });
+            const count = m.inventory[r] || 0;
+            if (count > 0) supply.push({ machineId: id, resource: r, count });
         });
         m.inputRequirements.forEach(r => {
-            if ((m.inventory[r] || 0) < 5) demand.push({ machineId: id, resource: r });
+            const count = m.inventory[r] || 0;
+            if (count < 10) demand.push({ machineId: id, resource: r, count });
         });
     }
+
+    // Sort by Urgency!
+    // Demand: Lower count = Higher urgency (needs items most)
+    demand.sort((a, b) => a.count - b.count);
+    // Supply: Higher count = Higher urgency (clogged output needs clearing)
+    supply.sort((a, b) => b.count - a.count);
 
     // 3. Update Bots
     const nextBots: Bot[] = model.bots.map(bot => {

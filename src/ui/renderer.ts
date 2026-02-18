@@ -95,7 +95,10 @@ export class CanvasRenderer {
             extractor: '#4a9eff',
             smelter: '#ff8c00',
             assembler: '#a020f0',
-            sink: '#ff4a4a'
+            sink: '#ff4a4a',
+            extractor_copper: '#4a9eff', // Same blue, maybe distinct? Let's use a copper-ish color if possible or just distinct.
+            smelter_copper: '#b87333', // Copper color
+            assembler_advanced: '#a020f0' // Purple like assembler
         };
 
         ctx.fillStyle = colors[m.type as MachineType] || '#fff';
