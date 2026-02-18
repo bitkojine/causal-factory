@@ -32,15 +32,15 @@ export interface Machine {
 export type BotState =
   | { readonly kind: "idle" }
   | {
-      readonly kind: "moving_to_pickup";
-      readonly machineId: string;
-      readonly resource: Resource;
-    }
+    readonly kind: "moving_to_pickup";
+    readonly machineId: string;
+    readonly resource: Resource;
+  }
   | {
-      readonly kind: "moving_to_deliver";
-      readonly machineId: string;
-      readonly resource: Resource;
-    };
+    readonly kind: "moving_to_deliver";
+    readonly machineId: string;
+    readonly resource: Resource;
+  };
 
 export interface Bot {
   readonly id: string;
@@ -58,6 +58,7 @@ export interface FactoryModel extends Model {
   readonly gridHeight: number;
   readonly tickCount: number;
   readonly speedMultiplier: number;
+  readonly autoPilotEnabled: boolean;
 }
 
 export type FactoryMsg =
@@ -65,14 +66,16 @@ export type FactoryMsg =
   | { readonly kind: "add_machine"; readonly machine: Machine }
   | { readonly kind: "spawn_bots"; readonly count: number }
   | {
-      readonly kind: "buy_machine";
-      readonly machineType: MachineType;
-      readonly x: number;
-      readonly y: number;
-    }
+    readonly kind: "buy_machine";
+    readonly machineType: MachineType;
+    readonly x: number;
+    readonly y: number;
+  }
   | { readonly kind: "market_crash" }
   | { readonly kind: "reset_bot"; readonly botId: string }
   | { readonly kind: "set_stress"; readonly level: number }
-  | { readonly kind: "set_speed"; readonly speed: number };
+  | { readonly kind: "set_speed"; readonly speed: number }
+  | { readonly kind: "toggle_autopilot" }
+  | { readonly kind: "autopilot_tick" };
 
 export type FactoryEffect = CoreEffect<FactoryMsg>;

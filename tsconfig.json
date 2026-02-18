@@ -3,7 +3,11 @@
     "target": "ESNext",
     "useDefineForClassFields": true,
     "module": "ESNext",
-    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ESNext",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "skipLibCheck": true,
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
@@ -16,11 +20,18 @@
     "noImplicitReturns": true,
     "baseUrl": ".",
     "paths": {
-      "@causaloop/core": ["../causaloop-repo/packages/core/src"],
+      "@causaloop/core": [
+        "../causaloop-repo/packages/core/src"
+      ],
       "@causaloop/platform-browser": [
         "../causaloop-repo/packages/platform-browser/src"
+      ],
+      "@causaloop/devtools": [
+        "../causaloop-repo/packages/devtools/src"
       ]
     }
   },
-  "include": ["src"]
+  "include": [
+    "src"
+  ]
 }
