@@ -33,11 +33,16 @@ The project uses a **dual-link** strategy to locate the `causaloop` core package
     ```
     This ensures the development server serves the library's source directly to the browser.
 
-### What if the sister folder is missing?
-If the `causaloop-repo` folder is not present as a sister directory:
-- **Build Failure**: `pnpm run dev` will immediately crash because it cannot find the aliased files.
-- **IDE Errors**: Your editor will show massive red squiggles on every import from `@causaloop`.
-- **Why do this?**: This "production-deep" link ensures that you are always testing the *actual* code you are building, making it impossible for "hidden" bugs in a pre-built package to hide.
+### Why it works
+- **No-Build Workflow**: Because the links point to the library's `/src` directory (not `dist`), the game's development server (Vite) treats the library as part of its own source tree.
+- **Instant HMR**: Changes made to any file in `../causaloop-repo/packages/core/src` trigger an immediate Hot Module Replacement or full page reload in the game. You do **not** need to run a separate build step for the library.
+
+### Verified Instant Feedback Loop
+I have verified this architecture by:
+1.  Launching the game at `localhost:3000`.
+2.  Modifying the library's core `dispatcher.ts` (e.g., adding a `console.log` inside the `dispatch` function).
+3.  Observing the running game's console.
+4.  **Result**: The game reflected the library's internal code change **instantly** without a restart, proving a perfect local development cycle for engine building.
 
 ---
 
