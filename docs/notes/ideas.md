@@ -3,11 +3,13 @@
 ## Auto-Pilot Heuristics
 
 ### Logistics Scaling
+
 - If less than 10% of bots are idle, we are bottlenecked on logistics and should buy more bots.
 - Bots are currently capped at 2000 for safety unless stress testing.
 - Bots are spawned in batches of 10% of total count or 10, whichever is larger.
 
 ### Construction Strategy
+
 - **Buffer:** Always keep at least $500 credits as a buffer for operations.
 - **Priority 1: Iron Chain:** Maintain a 1:1:1 ratio of Extractor, Smelter, and Assembler.
 - **Priority 2: Copper Chain:** Start copper setup (1:1 Extractor to Smelter) once at least 3 iron assemblers are making money.

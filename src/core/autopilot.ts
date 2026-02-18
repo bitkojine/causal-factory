@@ -106,7 +106,7 @@ export class AutoPilot {
 
     if (
       counts.assembler_advanced <
-      Math.min(counts.assembler, counts.smelter_copper) &&
+        Math.min(counts.assembler, counts.smelter_copper) &&
       credits > COSTS.assembler_advanced + BUFFER
     ) {
       this.buy("assembler_advanced");
