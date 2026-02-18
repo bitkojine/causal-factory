@@ -42,7 +42,7 @@ const dispatcher = createDispatcher({
 const overlayContainer = document.getElementById("ui-overlay");
 if (overlayContainer) {
   const uiRenderer = createSnabbdomRenderer(overlayContainer, (snapshot) =>
-    view(snapshot, dispatcher.getMetrics()),
+    view(snapshot as FactoryModel, dispatcher.getMetrics()),
   );
   dispatcher.subscribe((snapshot) =>
     uiRenderer.render(snapshot, (msg) =>
