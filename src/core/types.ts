@@ -2,7 +2,7 @@ import { Effect, Model } from '@causaloop/core';
 
 export type Resource = 'iron_ore' | 'iron_plate' | 'gear' | 'copper_ore' | 'copper_wire' | 'compute_core';
 
-export type MachineType = 'extractor' | 'smelter' | 'assembler' | 'sink';
+export type MachineType = 'extractor' | 'smelter' | 'assembler' | 'sink' | 'extractor_copper' | 'smelter_copper' | 'assembler_advanced';
 
 export interface Machine {
     readonly id: string;

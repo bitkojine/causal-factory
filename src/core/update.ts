@@ -6,6 +6,9 @@ const MACHINE_SPECS: Record<MachineType, { cost: number; inputs: Resource[]; out
     smelter: { cost: 500, inputs: ['iron_ore'], outputs: ['iron_plate'], speed: 0.03 },
     assembler: { cost: 1200, inputs: ['iron_plate'], outputs: ['gear'], speed: 0.02 },
     sink: { cost: 0, inputs: ['gear'], outputs: [], speed: 1.0 },
+    extractor_copper: { cost: 100, inputs: [], outputs: ['copper_ore'], speed: 0.05 },
+    smelter_copper: { cost: 500, inputs: ['copper_ore'], outputs: ['copper_wire'], speed: 0.03 },
+    assembler_advanced: { cost: 3000, inputs: ['gear', 'copper_wire'], outputs: ['compute_core'], speed: 0.01 },
 };
 
 export const update: UpdateFn<FactoryModel, FactoryMsg, FactoryEffect> = (
@@ -99,18 +102,26 @@ function handleTick(model: FactoryModel, delta: number): UpdateResult<FactoryMod
     }
 
     // 2. Identify Supply and Demand
-    const supply: { machineId: string; resource: Resource }[] = [];
-    const demand: { machineId: string; resource: Resource }[] = [];
+    const supply: { machineId: string; resource: Resource; count: number }[] = [];
+    const demand: { machineId: string; resource: Resource; count: number }[] = [];
 
     for (const id in nextMachines) {
         const m = nextMachines[id];
         m.outputs.forEach(r => {
-            if ((m.inventory[r] || 0) > 0) supply.push({ machineId: id, resource: r });
+            const count = m.inventory[r] || 0;
+            if (count > 0) supply.push({ machineId: id, resource: r, count });
         });
         m.inputRequirements.forEach(r => {
-            if ((m.inventory[r] || 0) < 5) demand.push({ machineId: id, resource: r });
+            const count = m.inventory[r] || 0;
+            if (count < 10) demand.push({ machineId: id, resource: r, count });
         });
     }
+
+    // Sort by Urgency!
+    // Demand: Lower count = Higher urgency (needs items most)
+    demand.sort((a, b) => a.count - b.count);
+    // Supply: Higher count = Higher urgency (clogged output needs clearing)
+    supply.sort((a, b) => b.count - a.count);
 
     // 3. Update Bots
     const nextBots: Bot[] = model.bots.map(bot => {
