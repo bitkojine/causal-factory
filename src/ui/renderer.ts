@@ -1,5 +1,5 @@
 import { Snapshot } from '@causaloop/core';
-import { FactoryModel, MachineType } from '../core/types.js';
+import { FactoryModel, Machine, MachineType } from '../core/types.js';
 
 
 export class CanvasRenderer {
@@ -89,7 +89,7 @@ export class CanvasRenderer {
         this.updateOverlay(snapshot, metrics);
     }
 
-    private drawMachine(m: any) {
+    private drawMachine(m: Machine) {
         const ctx = this.ctx;
         const colors: Record<MachineType, string> = {
             extractor: '#4a9eff',
@@ -106,7 +106,7 @@ export class CanvasRenderer {
 
         // Inventory dots
         let i = 0;
-        for (const res in m.inventory) {
+        for (const res of Object.keys(m.inventory) as (keyof typeof m.inventory)[]) {
             const count = m.inventory[res];
             if (count > 0) {
                 ctx.fillStyle = '#fff';

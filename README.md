@@ -54,16 +54,16 @@ Advanced:       Assembler (gear) + Copper Smelter ──┴→ Advanced Assemble
 
 ### Bot Swarm
 
-Autonomous bots handle all logistics. Each bot evaluates every machine each tick, prioritizing:
-- **Highest-urgency demand** — machines with the emptiest input buffers
-- **Most-clogged supply** — machines with the fullest output buffers
+Autonomous bots handle all logistics. Each tick, the simulation builds global supply and demand lists sorted by urgency, and idle bots claim tasks from those lists:
+- **Highest-urgency demand** — machines with the emptiest input buffers are served first
+- **Most-clogged supply** — machines with the fullest output buffers are drained first
 
 ### Controls
 
 | Button | Effect |
 |---|---|
 | **ENABLE AUTO-PILOT** | AI manages bots, builds machines, expands infrastructure |
-| **TURBO MODE (x1000)** | Batch-processes 1,000 ticks per frame |
+| **TURBO MODE (x1000)** | Applies a 1000× speed multiplier — each tick simulates 1,000× the normal time delta |
 | **Hide UI** | Cinematic view — watch the swarm work |
 | **TRIGGER EVENT STORM** | Market crash — resets every bot to idle simultaneously |
 | **BURN-IN STRESS TEST** | Continuously spawns 200 bots every 50ms |
@@ -80,15 +80,22 @@ Every system in this game maps directly to a causaloop API. No wrappers, no abst
 All state mutations flow through one dispatcher. Button clicks, bot movements, market crashes — everything is a message in a sequential queue.
 
 ```typescript
+const runner = new BrowserRunner<FactoryMsg>();
+
 const dispatcher = createDispatcher({
-    model: initialModel,       // Immutable game state
-    update,                    // Pure function: (model, msg, ctx) → { model, effects }
-    subscriptions,             // Declarative event sources
-    onCommit: (snapshot) => {  // Fires after each batch — drives rendering
-        renderer.render(snapshot, stats);
-        latestSnapshot = snapshot;  // Feeds Auto-Pilot decisions
+    model: initialModel,
+    update,
+    subscriptions,
+    effectRunner: (eff, dispatch) => runner.run(eff, dispatch),
+    subscriptionRunner: {
+        start: (sub, dispatch) => runner.startSubscription(sub, dispatch),
+        stop: (key) => runner.stopSubscription(key),
     },
-    devMode: true,             // Enables deep freeze on all state
+    onCommit: (snapshot) => {
+        renderer.render(snapshot, stats);
+        latestSnapshot = snapshot;
+    },
+    devMode: true,
 });
 ```
 
@@ -129,8 +136,12 @@ const machine = { id: `m-${ctx.now()}-${ctx.random()}` };
 The `animationFrame` subscription drives the tick loop. It starts when the dispatcher initializes, stops on `shutdown()`, and could conditionally pause based on model state.
 
 ```typescript
-export function subscriptions(_model: Snapshot<FactoryModel>): readonly Subscription<FactoryMsg>[] {
-    return [{ kind: 'animationFrame', key: 'game-loop', onFrame: () => ({ kind: 'tick', delta: 1 }) }];
+export function subscriptions(_model: Snapshot<FactoryModel>): readonly AnimationFrameSubscription<FactoryMsg>[] {
+    return [{
+        kind: 'animationFrame',
+        key: 'game-loop',
+        onFrame: (_time: number) => ({ kind: 'tick', delta: 1 }),
+    }];
 }
 ```
 
@@ -150,7 +161,7 @@ alert(JSON.stringify(snapshot) === JSON.stringify(replayed) ? 'PASSED ✅' : 'FA
 
 ### Deep Freeze — Zero Mutation Bugs
 
-With `devMode: true`, the dispatcher recursively freezes the entire model after every update. Accidental `bot.x = newX` (instead of `{ ...bot, x: newX }`) throws immediately. Essential when managing 100,000+ mutable objects.
+With `devMode: true`, the dispatcher recursively freezes the entire model after every update. Accidental `bot.x = newX` (instead of `{ ...bot, x: newX }`) throws immediately. Essential when managing 100,000+ objects.
 
 ### BrowserRunner — Platform Abstraction
 
