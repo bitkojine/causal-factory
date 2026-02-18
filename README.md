@@ -1,214 +1,198 @@
-# Causal Factory: Evolution
+<p align="center">
+  <h1 align="center">⚙️ Causal Factory: Evolution</h1>
+  <p align="center">
+    A real-time industrial logistics game powered by <a href="https://github.com/bitkojine/causaloop"><strong>causaloop</strong></a>
+    <br />
+    <em>100,000+ entities · deterministic replay · zero mutation bugs</em>
+  </p>
+</p>
 
-A real-time industrial logistics game built entirely on the **[causaloop](https://github.com/bitkojine/causaloop)** MVU (Model–View–Update) framework. Every bot movement, machine cycle, and economic transaction flows through causaloop's deterministic dispatcher — making this game both a playable demo and a brutal stress test for the engine.
+<p align="center">
+  <a href="#-quick-start">Quick Start</a> ·
+  <a href="#-gameplay">Gameplay</a> ·
+  <a href="#-causaloop-integration-map">Integration Map</a> ·
+  <a href="#-stress-tests">Stress Tests</a> ·
+  <a href="#-architecture">Architecture</a>
+</p>
 
 ---
 
 ## 🚀 Quick Start
 
 ```bash
-git clone https://github.com/bitkojine/causal-factory.git causal-factory && git clone https://github.com/bitkojine/causaloop.git causaloop-repo && cd causaloop-repo && pnpm install && cd ../causal-factory && pnpm install && pnpm run dev
+git clone https://github.com/bitkojine/causal-factory.git causal-factory \
+  && git clone https://github.com/bitkojine/causaloop.git causaloop-repo \
+  && cd causaloop-repo && pnpm install \
+  && cd ../causal-factory && pnpm install && pnpm run dev
 ```
+
+Open **http://localhost:3000** → Click **ENABLE AUTO-PILOT** → Click **TURBO MODE (x1000)** → Watch.
 
 ---
 
 ## 🎮 Gameplay
 
-Build an automated industrial empire. Your goal is to scale production chains, grow a bot swarm, and maximize credit output.
+Build an automated industrial empire. Scale production chains, grow a bot swarm, maximize credit output.
 
-### Supply Chains
+### Production Lines
+
+```
+Iron Chain:     Extractor → Smelter → Assembler → Sink → 💰 Credits
+Copper Chain:   Copper Extractor → Copper Smelter ─┐
+Advanced:       Assembler (gear) + Copper Smelter ──┴→ Advanced Assembler → compute_core
+```
 
 | Machine | Input | Output | Cost |
 |---|---|---|---|
-| **Extractor** | — | `iron_ore` | $100 |
-| **Smelter** | `iron_ore` | `iron_plate` | $500 |
-| **Assembler** | `iron_plate` | `gear` | $1,200 |
-| **Copper Extractor** | — | `copper_ore` | $100 |
-| **Copper Smelter** | `copper_ore` | `copper_wire` | $500 |
-| **Advanced Assembler** | `gear` + `copper_wire` | `compute_core` | $3,000 |
-| **Industrial Sink** | `gear` | **Credits** | — |
+| Extractor | — | `iron_ore` | $100 |
+| Smelter | `iron_ore` | `iron_plate` | $500 |
+| Assembler | `iron_plate` | `gear` | $1,200 |
+| Copper Extractor | — | `copper_ore` | $100 |
+| Copper Smelter | `copper_ore` | `copper_wire` | $500 |
+| Advanced Assembler | `gear` + `copper_wire` | `compute_core` | $3,000 |
+| Industrial Sink | `gear` | **Credits** | free |
 
 ### Bot Swarm
-Thousands of autonomous bots handle all logistics. Each bot independently evaluates all machines every tick, prioritizing **the most urgent demand** (lowest inventory) and **the most clogged supply** (highest output buffer).
 
-### Auto-Pilot Mode
-Click **ENABLE AUTO-PILOT** and the game plays itself. The AI manages bot populations, maintains production ratios (Extractor → Smelter → Assembler → Sink), and expands infrastructure when profitable.
+Autonomous bots handle all logistics. Each bot evaluates every machine each tick, prioritizing:
+- **Highest-urgency demand** — machines with the emptiest input buffers
+- **Most-clogged supply** — machines with the fullest output buffers
 
-### Turbo Mode (x1000)
-Click **TURBO MODE** to simulate 1,000 ticks per frame using batch processing. Combined with Auto-Pilot, watch an entire industrial empire emerge in seconds. Click **Hide UI** for a cinematic view.
+### Controls
+
+| Button | Effect |
+|---|---|
+| **ENABLE AUTO-PILOT** | AI manages bots, builds machines, expands infrastructure |
+| **TURBO MODE (x1000)** | Batch-processes 1,000 ticks per frame |
+| **Hide UI** | Cinematic view — watch the swarm work |
+| **TRIGGER EVENT STORM** | Market crash — resets every bot to idle simultaneously |
+| **BURN-IN STRESS TEST** | Continuously spawns 200 bots every 50ms |
+| **VERIFY DETERMINISM** | Replays entire message history and compares final state |
 
 ---
 
-## ⚙️ How Causaloop Powers Every System
+## 🔗 Causaloop Integration Map
 
-This game is not just built *with* causaloop — it is built **on** causaloop. Every system below is a direct usage of a causaloop API.
+Every system in this game maps directly to a causaloop API. No wrappers, no abstractions — raw engine usage.
 
-### 1. The Dispatcher — Central Nervous System
+### Dispatcher — Single Source of Truth
+
+All state mutations flow through one dispatcher. Button clicks, bot movements, market crashes — everything is a message in a sequential queue.
 
 ```typescript
-import { createDispatcher } from '@causaloop/core';
-
 const dispatcher = createDispatcher({
-    model: initialModel,
-    update,
-    subscriptions,
-    effectRunner: (eff, dispatch) => runner.run(eff, dispatch),
-    subscriptionRunner: { start, stop },
-    onCommit: (snapshot) => renderer.render(snapshot, stats),
-    devMode: true,
+    model: initialModel,       // Immutable game state
+    update,                    // Pure function: (model, msg, ctx) → { model, effects }
+    subscriptions,             // Declarative event sources
+    onCommit: (snapshot) => {  // Fires after each batch — drives rendering
+        renderer.render(snapshot, stats);
+        latestSnapshot = snapshot;  // Feeds Auto-Pilot decisions
+    },
+    devMode: true,             // Enables deep freeze on all state
 });
 ```
 
-**What causaloop provides**: `createDispatcher` is the single entry point. It takes the initial game state, the update function, and wiring for effects/subscriptions. From that point forward, **all** state changes flow through `dispatcher.dispatch(msg)`. There are no side-channel mutations.
+> **File:** [`main.ts`](src/main.ts)
 
-**What the game gains**: A single source of truth. Every button click (`buyMachine`), every bot movement (`tick`), every market crash (`market_crash`) — all are messages dispatched to the same queue. The dispatcher processes them sequentially, guaranteeing no race conditions even under 100,000+ entities.
+### Pure Update Function — The Entire Simulation
 
----
-
-### 2. The Update Function — Pure Game Logic
+Machine production, bot routing, inventory management, economic calculations — all in one pure function. No side effects. No mutation. Data in, data out.
 
 ```typescript
-import { UpdateFn, UpdateResult, UpdateContext } from '@causaloop/core';
-
-export const update: UpdateFn<FactoryModel, FactoryMsg, FactoryEffect> = (
-    model, msg, ctx
-): UpdateResult<FactoryModel, FactoryEffect> => {
+export const update: UpdateFn<FactoryModel, FactoryMsg, FactoryEffect> = (model, msg, ctx) => {
     switch (msg.kind) {
-        case 'tick': return handleTick(model, msg.delta);
-        case 'buy_machine': /* ... */
-        case 'market_crash': /* ... */
+        case 'tick':         return handleTick(model, msg.delta);
+        case 'buy_machine':  /* deduct credits, create machine with ctx.random() ID */
+        case 'set_speed':    /* adjust simulation speed multiplier */
+        case 'market_crash': /* reset all bots to idle */
+        case 'spawn_bots':   /* create bots at ctx.random() positions */
     }
 };
 ```
 
-**What causaloop provides**: The `UpdateFn<M, G, E>` type signature enforces a pure function contract: `(model, msg, ctx) → { model, effects }`. No side effects. No mutation. Just data in, data out.
+> **File:** [`update.ts`](src/core/update.ts)
 
-**What the game gains**: The entire game simulation — machine production, bot routing, inventory management, economic calculations — is a **single pure function**. This is what makes deterministic replay possible. It also means any bug in game logic can be reproduced by replaying the same message sequence.
+### UpdateContext — Captured Randomness & Time
 
----
-
-### 3. UpdateContext — Managed Randomness & Time
+`ctx.random()` and `ctx.now()` look like `Math.random()` and `Date.now()`, but every value is recorded in the message log. This is what makes replay possible.
 
 ```typescript
-const newMachine: Machine = {
-    id: `m-${ctx.now()}-${ctx.random()}`,  // Deterministic ID generation
-    // ...
-};
-
-// Bot spawning with recorded random positions
-bots.push({
-    x: ctx.random() * 800,
-    y: ctx.random() * 600,
-});
+// Every bot position and machine ID is reproducible
+const bot = { x: ctx.random() * 800, y: ctx.random() * 600 };
+const machine = { id: `m-${ctx.now()}-${ctx.random()}` };
 ```
 
-**What causaloop provides**: `UpdateContext` gives the update function access to `random()` and `now()` — but unlike `Math.random()` and `Date.now()`, these are **captured by the dispatcher**. Every random number and timestamp is recorded in the message log's `Entropy` field.
+> **File:** [`update.ts`](src/core/update.ts) — `spawnBots()`, `buy_machine` handler
 
-**What the game gains**: Bot positions, machine IDs, and all non-deterministic decisions are reproducible. When the dispatcher replays the message log, it feeds back the exact same random numbers, producing an identical game state. This is the foundation of the **VERIFY DETERMINISM** feature.
+### Managed Subscriptions — Declarative Game Loop
 
----
-
-### 4. Immutable State & Deep Freeze — Zero Mutation Bugs
-
-**What causaloop provides**: In `devMode`, the dispatcher calls `Object.freeze()` recursively on the entire model after every update. Any accidental mutation throws an immediate runtime error.
-
-**What the game gains**: With 100,000+ bot objects and hundreds of machines, accidental mutation is a constant risk (e.g., `bot.x = newX` instead of `{ ...bot, x: newX }`). Deep freeze catches these bugs instantly during development instead of letting them cause subtle state corruption.
-
----
-
-### 5. Managed Subscriptions — The Game Loop
+The `animationFrame` subscription drives the tick loop. It starts when the dispatcher initializes, stops on `shutdown()`, and could conditionally pause based on model state.
 
 ```typescript
-import { Subscription } from '@causaloop/core';
-
 export function subscriptions(_model: Snapshot<FactoryModel>): readonly Subscription<FactoryMsg>[] {
-    return [{
-        kind: 'animationFrame',
-        key: 'game-loop',
-        onFrame: () => ({ kind: 'tick', delta: 1 }),
-    }];
+    return [{ kind: 'animationFrame', key: 'game-loop', onFrame: () => ({ kind: 'tick', delta: 1 }) }];
 }
 ```
 
-**What causaloop provides**: The `subscriptions` function declaratively describes what external event sources should be active based on the current model state. The dispatcher handles starting/stopping subscriptions via `diffSubscriptions`.
+> **File:** [`subscriptions.ts`](src/core/subscriptions.ts)
 
-**What the game gains**: The game loop itself is a managed subscription. It starts when the dispatcher initializes and stops cleanly on `shutdown()`. Because subscriptions are derived from model state, the game could conditionally pause the tick loop (e.g., when replaying or when no machines exist) simply by returning an empty array.
+### Deterministic Replay — Time Travel
 
----
-
-### 6. onCommit — Rendering & Performance Monitoring
+Replays every message from the initial state using captured entropy. If even one bot coordinate drifts, the test fails.
 
 ```typescript
-onCommit: (snapshot) => {
-    const tickTime = now - lastTime;
-    renderer.render(snapshot, { tickTime, fps });
-    latestSnapshot = snapshot; // Feed to AutoPilot
-},
+const { log, snapshot } = dispatcher.getReplayableState();
+const replayed = replay({ initialModel, update, log });
+alert(JSON.stringify(snapshot) === JSON.stringify(replayed) ? 'PASSED ✅' : 'FAILED ❌');
 ```
 
-**What causaloop provides**: `onCommit` fires once per batch of processed messages, providing the latest frozen `Snapshot<M>`. This is the only place the game reads state for rendering.
+> **File:** [`main.ts`](src/main.ts) — `triggerReplay()`
 
-**What the game gains**: Clean separation between update logic and view rendering. The renderer never sees intermediate states — only committed snapshots. This also powers the Auto-Pilot, which reads `latestSnapshot` to make economic decisions.
+### Deep Freeze — Zero Mutation Bugs
+
+With `devMode: true`, the dispatcher recursively freezes the entire model after every update. Accidental `bot.x = newX` (instead of `{ ...bot, x: newX }`) throws immediately. Essential when managing 100,000+ mutable objects.
+
+### BrowserRunner — Platform Abstraction
+
+Core game logic (`update.ts`, `types.ts`, `autopilot.ts`) has zero browser dependencies. Only `main.ts` touches the browser-specific `BrowserRunner` for `requestAnimationFrame` and DOM events.
 
 ---
 
-### 7. Deterministic Replay — Time Travel
+## 🧪 Stress Tests
 
-```typescript
-import { replay } from '@causaloop/core';
-
-const { log, snapshot: finalSnapshot } = dispatcher.getReplayableState();
-const replayedSnapshot = replay({ initialModel, update, log });
-const isMatch = JSON.stringify(finalSnapshot) === JSON.stringify(replayedSnapshot);
-```
-
-**What causaloop provides**: `replay()` takes the initial model, the update function, and a message log (including captured entropy), and replays every message from scratch. `getReplayableState()` returns the current log and snapshot.
-
-**What the game gains**: Click **VERIFY DETERMINISM** after letting the game run with thousands of bots for a minute. The engine replays the entire history and compares the result. If even a single bot's X coordinate differs, the test fails. This proves that the entire game — randomness, timing, and all — is fully deterministic.
-
----
-
-### 8. BrowserRunner — Platform Abstraction
-
-```typescript
-import { BrowserRunner } from '@causaloop/platform-browser';
-
-const runner = new BrowserRunner();
-// Used for effect execution and subscription management
-```
-
-**What causaloop provides**: `BrowserRunner` is the browser-specific implementation of effect execution (`requestAnimationFrame`, DOM events, etc.) and subscription lifecycle management.
-
-**What the game gains**: The game's core logic (`update.ts`, `types.ts`) has zero browser dependencies. It could theoretically run in Node.js, a Web Worker, or a server. Only `main.ts` touches the browser-specific runner.
-
----
-
-## 🧪 Stress Testing Objectives
-
-| Test | What We Push | What We Validate |
+| Test | Pressure | Validates |
 |---|---|---|
-| **State Throughput** | 100,000+ bots | Dispatcher handles immutable updates without GC jank |
-| **Event Storm** | Market Crash resets all bots simultaneously | 10,000+ state transitions in a single tick |
-| **Batch Processing** | x1000 speed multiplier | Machines produce correct output counts at extreme time deltas |
-| **Entropy Consistency** | Full deterministic replay | Replayed state matches live state exactly |
-| **Managed Subscriptions** | AnimationFrame game loop | Tick loop starts/stops cleanly with dispatcher lifecycle |
-| **Deep Freeze** | 100,000+ mutable objects | Zero accidental mutations in devMode |
+| **State Throughput** | 100k+ bots | Immutable updates without GC jank |
+| **Event Storm** | Market crash resets all bots | 10k+ transitions in one tick |
+| **Batch Processing** | x1000 speed | Correct output at extreme time deltas |
+| **Entropy Replay** | Full history replay | Bit-perfect determinism |
+| **Deep Freeze** | 100k+ objects in devMode | Zero accidental mutations |
+| **Managed Subs** | AnimationFrame lifecycle | Clean start/stop with dispatcher |
 
 ---
 
-## 🏗️ Technical Architecture: The "Live-Link"
+## 🏗️ Architecture
 
-This game is hard-wired to the causaloop source code via a dual-link strategy:
+### Live-Link to causaloop Source
 
-**TypeScript Path Mapping** (`tsconfig.json`):
+This game links directly to causaloop's raw `.ts` source — no `node_modules`, no build step. Changes to the library trigger instant Vite HMR.
+
+```
+causal-factory/          ← this repo
+causaloop-repo/          ← sister folder (cloned separately)
+├── packages/core/src/   ← linked via tsconfig paths + vite aliases
+└── packages/platform-browser/src/
+```
+
+**tsconfig.json:**
 ```json
-"paths": {
+{ "paths": {
     "@causaloop/core": ["../causaloop-repo/packages/core/src"],
     "@causaloop/platform-browser": ["../causaloop-repo/packages/platform-browser/src"]
-}
+}}
 ```
 
-**Vite Path Aliasing** (`vite.config.ts`):
+**vite.config.ts:**
 ```typescript
 alias: {
     '@causaloop/core': path.resolve(__dirname, '../causaloop-repo/packages/core/src'),
@@ -216,14 +200,57 @@ alias: {
 }
 ```
 
-Changes to the causaloop library source are reflected **instantly** via Vite HMR — no separate build step required.
+### Project Structure
+
+```
+src/
+├── main.ts              # Dispatcher setup, UI bindings, Auto-Pilot wiring
+├── core/
+│   ├── types.ts         # FactoryModel, FactoryMsg, Machine, Bot, Resource
+│   ├── update.ts        # Pure update function (all game logic)
+│   ├── subscriptions.ts # AnimationFrame game loop
+│   └── autopilot.ts     # AI player (bot management, construction heuristics)
+└── ui/
+    └── renderer.ts      # Canvas rendering
+```
+
+### Tech Stack
+
+| Layer | Technology |
+|---|---|
+| State Management | [causaloop](https://github.com/bitkojine/causaloop) (MVU + deterministic dispatch) |
+| Rendering | Canvas 2D |
+| Build | Vite |
+| Language | TypeScript (strict) |
+| Package Manager | pnpm |
 
 ---
 
-## 🛠️ Run Instructions
+## 🛠️ Development
 
-1. **Position folders**: Ensure `causal-factory` and `causaloop-repo` are sister folders.
-2. **Install**: `cd causal-factory && pnpm install`.
-3. **Run**: `pnpm run dev`.
-4. **Auto-Pilot**: Click "ENABLE AUTO-PILOT" + "TURBO MODE" and watch it build an empire.
-5. **Verify**: Click "VERIFY DETERMINISM" after letting the game run.
+```bash
+# Prerequisites: Node.js 18+, pnpm
+
+# 1. Clone both repos as sister folders
+git clone https://github.com/bitkojine/causal-factory.git
+git clone https://github.com/bitkojine/causaloop.git causaloop-repo
+
+# 2. Install
+cd causaloop-repo && pnpm install && cd ../causal-factory && pnpm install
+
+# 3. Run
+pnpm run dev       # Opens at localhost:3000
+```
+
+### Verification Checklist
+
+1. Let the game run for ~30 seconds
+2. Click **VERIFY DETERMINISM** → should show `PASSED ✅`
+3. Enable **Auto-Pilot** + **Turbo Mode** → credits should skyrocket
+4. Click **TRIGGER EVENT STORM** → all bots reset, then recover
+
+---
+
+## 📄 License
+
+MIT
