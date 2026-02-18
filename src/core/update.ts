@@ -153,7 +153,6 @@ function handleAutoPilotTick(
 
   let nextModel = model;
 
-  // Manage Bots
   const allBots = Object.values(nextModel.bots);
   const totalBots = allBots.length;
   if (totalBots === 0) {
@@ -174,7 +173,6 @@ function handleAutoPilotTick(
     }
   }
 
-  // Manage Construction
   const COSTS: Record<MachineType, number> = {
     extractor: 100,
     smelter: 500,

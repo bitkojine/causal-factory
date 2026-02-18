@@ -39,7 +39,6 @@ const dispatcher = createDispatcher({
   devMode: true,
 });
 
-// Initialize Snabbdom renderer for the overlay
 const overlayContainer = document.getElementById("ui-overlay");
 if (overlayContainer) {
   const uiRenderer = createSnabbdomRenderer(overlayContainer, (snapshot) =>
@@ -52,7 +51,6 @@ if (overlayContainer) {
   );
 }
 
-// Initialize DevTools
 const devtoolsContainer = document.createElement("div");
 document.body.appendChild(devtoolsContainer);
 createDevTools({
