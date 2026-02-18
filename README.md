@@ -1,84 +1,89 @@
-# Causal Factory: Deterministic Swarm
+# Causal Factory: Evolution
 
-A production-quality demo showcasing the power of `causaloop`.
-
-## 🚀 Overview
-
-Causal Factory is a deterministic simulation of a resource-gathering bot swarm. It serves as a stress test for the `causaloop` architecture, pushing its limits with high entity counts and dense event throughput.
-
-### Key Features
-- **Deterministic Simulation**: Every bot movement and resource extraction is perfectly reproducible.
-- **Extreme Stress Mode**: Scale from 1k to 10k+ bots to test the dispatcher's throughput.
-- **Real-time Metrics**: Live tracking of FPS, Tick Time, and event counts.
-- **Instant Replay**: Verify determinism by replaying the entire session from the message log.
-
-## 🛠️ Setup & Run
-
-### Prerequisites
-- [Node.js](https://nodejs.org/) >= 20.0.0
-- [pnpm](https://pnpm.io/) >= 10.0.0
-
-> [!IMPORTANT]
-> **Folder Structure**: This demo requires the `causaloop` repository to be present as a sister folder. The expected structure is:
-> ```text
-> .
-> ├── causal-factory/   (this repo)
-> └── causaloop-repo/    (the causaloop source)
-> ```
-
-### Live-Link Architecture
-The game is configured to find `causaloop` source files directly on your machine, rather than using a pre-built version from `node_modules`. This is achieved through:
-- **TypeScript Paths**: `tsconfig.json` maps `@causaloop/*` to `../causaloop-repo/packages/*/src`.
-- **Vite Aliases**: `vite.config.ts` ensures the dev server pulls code directly from the library source.
-
-This allows you to modify the library and see changes in the game instantly.
-
-### Installation
-1.  Clone the repository and its submodules.
-2.  Install dependencies:
-    ```bash
-    pnpm install
-    ```
-
-### Development
-Launch the demo in your browser:
-```bash
-pnpm run dev
-```
-
-### Benchmarking
-1.  Open the demo in Chrome.
-2.  Open DevTools -> Performance tab to profile GC and CPU.
-3.  Use the "Toggle Extreme Stress" button to push the simulation beyond 10k entities.
-
-## 🏗️ How it uses Causaloop
-
-This game does not merely "use" `causaloop`; it is **architected around it**. Every major gameplay system is managed by the library's core dispatcher.
-
-### 1. The Single Source of Truth (`Model`)
-The entire world state—including the position, target, and state of over 10,000 bots—lives inside a single, immutable `FactoryModel`. It is JSON-serializable, allowing for perfect snapshots at any point in time.
-
-### 2. Pure Update Logic (`Update`)
-The `update` function in `src/core/update.ts` is the heart of the simulation. It is a strictly pure function that takes the current state and a message (like `tick` or `spawn_bots`) and returns the next state. It contains **zero side effects**.
-
-### 3. Managed Time & Entropy (`UpdateContext`)
-Determinism is achieved by using the `UpdateContext` provided by `causaloop`. 
-- **Time**: Instead of using `Date.now()`, the simulation uses `ctx.now()`, which is recorded in the message log.
-- **Randomness**: All bot spawning and target selection uses `ctx.random()`. During replay, `causaloop` feeds the recorded random numbers back into the system, ensuring identical outcomes.
-
-### 4. Declarative Loops (`Subscriptions`)
-The simulation tick is not a `setInterval` or a rogue loop. It is a **managed subscription**. The `subscriptions` function declares that the game wants an `AnimationFrame` tick whenever it's running. `causaloop` handles starting and stopping this loop automatically.
-
-### 5. Platform Purity (`BrowserRunner`)
-All browser-specific APIs (Canvas, requestAnimationFrame) are isolated in the `ui` and `BrowserRunner` layers. The core game logic remains platform-agnostic, interacting only via data-driven Effects and Messages.
+**Causal Factory** is a production-grade industrial logistics simulation designed specifically to stress test and showcase the `causaloop` deterministic engine.
 
 ---
 
-## 📼 Determinism Verification
+## 🏗️ Technical Architecture: The "Live-Link"
 
-The demo includes a "Verify Determinism (Replay)" button. This button:
-1.  Captures the current message log and final model snapshot.
-2.  Creates a clean, isolated dispatcher instance.
-3.  Replays the entire log.
-4.  Compares the final snapshots (deep JSON comparison).
-5.  Alerts "PASSED" only if the states are identical.
+Unlike typical projects that install dependencies via `npm`, this game is hard-wired to the `causaloop` source code for real-time development and brutal transparency.
+
+### How it finds the source
+The project uses a **dual-link** strategy to locate the `causaloop` core packages:
+
+1.  **TypeScript Path Mapping (`tsconfig.json`)**:
+    ```json
+    "paths": {
+      "@causaloop/core": ["../causaloop-repo/packages/core/src"],
+      "@causaloop/platform-browser": ["../causaloop-repo/packages/platform-browser/src"]
+    }
+    ```
+    This tells the TypeScript compiler effectively: "Don't look in `node_modules`; go up one directory and find the raw `.ts` files."
+
+2.  **Vite Path Aliasing (`vite.config.ts`)**:
+    ```typescript
+    alias: {
+      '@causaloop/core': path.resolve(__dirname, '../causaloop-repo/packages/core/src'),
+      // ...
+    }
+    ```
+    This ensures the development server serves the library's source directly to the browser.
+
+### What if the sister folder is missing?
+If the `causaloop-repo` folder is not present as a sister directory:
+- **Build Failure**: `pnpm run dev` will immediately crash because it cannot find the aliased files.
+- **IDE Errors**: Your editor will show massive red squiggles on every import from `@causaloop`.
+- **Why do this?**: This "production-deep" link ensures that you are always testing the *actual* code you are building, making it impossible for "hidden" bugs in a pre-built package to hide.
+
+---
+
+## 🎮 Gameplay Features
+
+The game is a full industrial logistics chain. Your goal is to automate gear production to earn credits.
+
+### Core Systems
+- **Supply Chains**: 
+    - `Extractor`: Pulls `iron_ore` from the ground.
+    - `Smelter`: Consumes `iron_ore` to produce `iron_plate`.
+    - `Assembler`: Consumes `iron_plate` to produce `gear`.
+    - `Industrial Sink`: Consumes `gear` to generate **Credits**.
+- **The Bot Swarm**: Thousands of autonomous bots handle all logistics. They dynamically re-evaluate the world state every tick to find the most urgent supply or demand.
+- **The Economy**: Credits earned from the Sink are used to purchase new infrastructure.
+
+### How to Play
+1.  **Initial Setup**: The game starts with a starter line (one of each machine).
+2.  **Scale**: Use the **Industrial Fabrication Shop** at the bottom to:
+    - Add more Extractors/Smelters/Assemblers.
+    - Spawn thousands of additional bots.
+3.  **Optimize**: Watch the machines. If an Assembler is "Idle" (grey progress bar), you need more Smelters and more Bots.
+
+---
+
+## 🧪 Causaloop Stress Testing Objectives
+
+This game is more than a demo; it is a **brutal validation suite** for `causaloop`. We test:
+
+1.  **State Throughput (100k+ Entities)**:
+    - We push the bot count to **100,000+**. 
+    - *The Test*: Does the dispatcher's `onCommit` and immutable update cycle hold up without causing memory fragmentation or GC jank?
+
+2.  **Event Storm Handling (Market Crash)**:
+    - Clicking **TRIGGER EVENT STORM** (Market Crash) sends a message that resets every single bot's state to `idle` simultaneously.
+    - *The Test*: Can the system handle a localized burst of 10,000+ state transitions and re-routing calculations in a **single tick**?
+
+3.  **Entropy Consistency (Deterministic Replay)**:
+    - Every movement and decision in the game is powered by `UpdateContext.random()`.
+    - *The Test*: Click **VERIFY DETERMINISM**. We take the entire history of thousands of messages (including captured random seeds) and replay them from scratch. If the final replayed state differs by even a single bot's X coordinate, the test fails.
+
+4.  **Managed Subscriptions**:
+    - The simulation tick is a managed `AnimationFrame` subscription.
+    - *The Test*: We verify that the tick loop is perfectly locked to the dispatcher state and ceases entirely when the application is idle or replaying.
+
+---
+
+## 🛠️ Run Instructions
+
+1.  **Position folders**: Ensure `causal-factory` and `causaloop-repo` are sister folders.
+2.  **Install**: `cd causal-factory && pnpm install`.
+3.  **Run**: `pnpm run dev`.
+4.  **Verify**: Click "VERIFY DETERMINISM" in the UI after letting the game run for a minute.
