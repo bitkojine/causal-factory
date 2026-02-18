@@ -26,13 +26,14 @@ export class AutoPilot {
     }
 
     private manageBots(model: FactoryModel) {
-        const totalBots = model.bots.length;
+        const allBots = Object.values(model.bots);
+        const totalBots = allBots.length;
         if (totalBots === 0) {
             this.dispatch({ kind: 'spawn_bots', count: 10 });
             return;
         }
 
-        const idleBots = model.bots.filter(b => b.state.kind === 'idle').length;
+        const idleBots = allBots.filter(b => b.state.kind === 'idle').length;
         const idleRatio = idleBots / totalBots;
 
         // If less than 10% bots are idle, we are bottlenecked on logistics -> Buy more bots

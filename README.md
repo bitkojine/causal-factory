@@ -73,31 +73,11 @@ Autonomous bots handle all logistics. Each tick, the simulation builds global su
 
 ## 🔗 Causaloop Integration Map
 
-Every system in this game maps directly to a causaloop API. No wrappers, no abstractions — raw engine usage.
+Every system in this game maps to a causaloop API.
 
 ### Dispatcher — Single Source of Truth
 
-All state mutations flow through one dispatcher. Button clicks, bot movements, market crashes — everything is a message in a sequential queue.
-
-```typescript
-const runner = new BrowserRunner<FactoryMsg>();
-
-const dispatcher = createDispatcher({
-    model: initialModel,
-    update,
-    subscriptions,
-    effectRunner: (eff, dispatch) => runner.run(eff, dispatch),
-    subscriptionRunner: {
-        start: (sub, dispatch) => runner.startSubscription(sub, dispatch),
-        stop: (key) => runner.stopSubscription(key),
-    },
-    onCommit: (snapshot) => {
-        renderer.render(snapshot, stats);
-        latestSnapshot = snapshot;
-    },
-    devMode: true,
-});
-```
+All state mutations flow through one dispatcher. Button clicks, bot movements, market crashes — everything is a message in a sequential queue. The dispatcher wires together the update function, subscriptions, effect runner, and rendering.
 
 > **File:** [`main.ts`](src/main.ts)
 
@@ -105,57 +85,29 @@ const dispatcher = createDispatcher({
 
 Machine production, bot routing, inventory management, economic calculations — all in one pure function. No side effects. No mutation. Data in, data out.
 
-```typescript
-export const update: UpdateFn<FactoryModel, FactoryMsg, FactoryEffect> = (model, msg, ctx) => {
-    switch (msg.kind) {
-        case 'tick':         return handleTick(model, msg.delta);
-        case 'buy_machine':  /* deduct credits, create machine with ctx.random() ID */
-        case 'set_speed':    /* adjust simulation speed multiplier */
-        case 'market_crash': /* reset all bots to idle */
-        case 'spawn_bots':   /* create bots at ctx.random() positions */
-    }
-};
 ```
+(model, msg, ctx) → { model, effects }
+```
+
+Every message kind (`tick`, `buy_machine`, `spawn_bots`, `market_crash`, `set_speed`) is handled in a single switch — the entire simulation lives here.
 
 > **File:** [`update.ts`](src/core/update.ts)
 
 ### UpdateContext — Captured Randomness & Time
 
-`ctx.random()` and `ctx.now()` look like `Math.random()` and `Date.now()`, but every value is recorded in the message log. This is what makes replay possible.
-
-```typescript
-// Every bot position and machine ID is reproducible
-const bot = { x: ctx.random() * 800, y: ctx.random() * 600 };
-const machine = { id: `m-${ctx.now()}-${ctx.random()}` };
-```
+`ctx.random()` and `ctx.now()` look like `Math.random()` and `Date.now()`, but every value is recorded in the message log. This is what makes replay possible — every bot position and machine ID is reproducible.
 
 > **File:** [`update.ts`](src/core/update.ts) — `spawnBots()`, `buy_machine` handler
 
 ### Managed Subscriptions — Declarative Game Loop
 
-The `animationFrame` subscription drives the tick loop. It starts when the dispatcher initializes, stops on `shutdown()`, and could conditionally pause based on model state.
-
-```typescript
-export function subscriptions(_model: Snapshot<FactoryModel>): readonly AnimationFrameSubscription<FactoryMsg>[] {
-    return [{
-        kind: 'animationFrame',
-        key: 'game-loop',
-        onFrame: (_time: number) => ({ kind: 'tick', delta: 1 }),
-    }];
-}
-```
+The `animationFrame` subscription drives the tick loop. It starts when the dispatcher initializes and stops on `shutdown()`. The subscriptions function receives the current model, so subscriptions can be conditionally added or removed based on state — though this game always returns the same subscription.
 
 > **File:** [`subscriptions.ts`](src/core/subscriptions.ts)
 
 ### Deterministic Replay — Time Travel
 
 Replays every message from the initial state using captured entropy. If even one bot coordinate drifts, the test fails.
-
-```typescript
-const { log, snapshot } = dispatcher.getReplayableState();
-const replayed = replay({ initialModel, update, log });
-alert(JSON.stringify(snapshot) === JSON.stringify(replayed) ? 'PASSED ✅' : 'FAILED ❌');
-```
 
 > **File:** [`main.ts`](src/main.ts) — `triggerReplay()`
 
@@ -174,7 +126,7 @@ Core game logic (`update.ts`, `types.ts`, `autopilot.ts`) has zero browser depen
 | Test | Pressure | Validates |
 |---|---|---|
 | **State Throughput** | 100k+ bots | Immutable updates without GC jank |
-| **Event Storm** | Market crash resets all bots | 10k+ transitions in one tick |
+| **Event Storm** | Market crash resets all bots | Bulk state reset of 10k+ entities in one update |
 | **Batch Processing** | x1000 speed | Correct output at extreme time deltas |
 | **Entropy Replay** | Full history replay | Bit-perfect determinism |
 | **Deep Freeze** | 100k+ objects in devMode | Zero accidental mutations |

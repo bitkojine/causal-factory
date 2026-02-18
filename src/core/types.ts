@@ -31,7 +31,7 @@ export interface Bot {
 
 export interface FactoryModel extends Model {
     readonly machines: Record<string, Machine>;
-    readonly bots: Bot[];
+    readonly bots: Record<string, Bot>;
     readonly credits: number;
     readonly gridWidth: number;
     readonly gridHeight: number;
@@ -45,6 +45,7 @@ export type FactoryMsg =
     | { readonly kind: 'spawn_bots'; readonly count: number }
     | { readonly kind: 'buy_machine'; readonly machineType: MachineType; readonly x: number; readonly y: number }
     | { readonly kind: 'market_crash' }
+    | { readonly kind: 'reset_bot'; readonly botId: string }
     | { readonly kind: 'set_stress'; readonly level: number }
     | { readonly kind: 'set_speed'; readonly speed: number };
 
