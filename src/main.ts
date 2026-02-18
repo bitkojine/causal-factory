@@ -13,6 +13,7 @@ const initialModel: FactoryModel = {
     gridWidth: 50,
     gridHeight: 50,
     tickCount: 0,
+    speedMultiplier: 1,
 };
 
 const runner = new BrowserRunner();
@@ -50,9 +51,10 @@ const autopilot = new AutoPilot((msg) => dispatcher.dispatch(msg));
 
 setInterval(() => {
     autopilot.tick(latestSnapshot);
-}, 1000);
+}, 100); // 10x faster checking for turbo mode compatibility
 
 (window as any).toggleAutoPilot = () => autopilot.setEnabled(!autopilot.isEnabled());
+(window as any).setGameSpeed = (speed: number) => dispatcher.dispatch({ kind: 'set_speed', speed });
 
 // Setup Initial Industrial Zone
 const setupScenario = () => {

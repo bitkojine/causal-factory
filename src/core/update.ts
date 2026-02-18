@@ -16,9 +16,14 @@ export const update: UpdateFn<FactoryModel, FactoryMsg, FactoryEffect> = (
     msg: FactoryMsg,
     ctx: UpdateContext,
 ): UpdateResult<FactoryModel, FactoryEffect> => {
+    // Basic init if missing
+    // const currentSpeed = model.speedMultiplier || 1;
+
     switch (msg.kind) {
         case 'tick':
             return handleTick(model, msg.delta);
+        case 'set_speed':
+            return { model: { ...model, speedMultiplier: msg.speed }, effects: [] };
         case 'add_machine':
             return {
                 model: {
@@ -79,22 +84,50 @@ function handleTick(model: FactoryModel, delta: number): UpdateResult<FactoryMod
     const nextMachines = { ...model.machines };
 
     // 1. Process Machines
+    // Scale delta by speed multiplier
+    const effectiveDelta = delta * (model.speedMultiplier || 1);
+
     for (const id in nextMachines) {
         const m = nextMachines[id];
         const canProcess = m.inputRequirements.every(r => (m.inventory[r] || 0) > 0);
 
         if (canProcess && (m.type !== 'sink' || m.inputRequirements.length > 0)) {
-            const nextProgress = m.progress + m.speed * delta;
-            if (nextProgress >= 100) {
+            let nextProgress = m.progress + m.speed * effectiveDelta;
+            let producedCount = 0;
+
+            // BATCH PROCESSING: If speed is high, we might produce multiple items in one tick
+            while (nextProgress >= 100) {
+                producedCount++;
+                nextProgress -= 100;
+
+                // If we run out of inputs during batch, stop
+                // But for simplicity/performance in turbo mode, let's just do a greedy check?
+                // Actually, precise batching requires checking inputs every sub-step.
+                // Let's do a simplified version: calculate max possible production based on inputs.
+
+                // How many can we afford?
+                const maxAfford = m.inputRequirements.length > 0
+                    ? Math.min(...m.inputRequirements.map(r => m.inventory[r] || 0))
+                    : 999999; // Infinite inputs for extractors
+
+                if (producedCount > maxAfford) {
+                    // We can't actually produce this one
+                    producedCount--;
+                    nextProgress = 0; // Stuck at 0 progress waiting for inputs
+                    break;
+                }
+            }
+
+            if (producedCount > 0) {
                 const nextInv = { ...m.inventory };
-                m.inputRequirements.forEach(r => { nextInv[r] = (nextInv[r] || 1) - 1; });
-                m.outputs.forEach(r => { nextInv[r] = (nextInv[r] || 0) + 1; });
+                m.inputRequirements.forEach(r => { nextInv[r] = (nextInv[r] || 0) - producedCount; });
+                m.outputs.forEach(r => { nextInv[r] = (nextInv[r] || 0) + producedCount; });
 
                 if (m.type === 'sink') {
-                    nextCredits += 50;
+                    nextCredits += 50 * producedCount;
                 }
 
-                nextMachines[id] = { ...m, progress: 0, inventory: nextInv };
+                nextMachines[id] = { ...m, progress: nextProgress, inventory: nextInv };
             } else {
                 nextMachines[id] = { ...m, progress: nextProgress };
             }

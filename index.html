@@ -139,11 +139,16 @@
 <body>
     <div id="app"></div>
     <div id="ui-overlay"></div>
+    <button id="btn-hide-ui" onclick="toggleUI()"
+        style="position: absolute; top: 20px; right: 20px; z-index: 1000; background: rgba(0,0,0,0.5); color: #fff; border: 1px solid #555; padding: 8px 12px; border-radius: 4px; cursor: pointer;">Hide
+        UI</button>
 
     <div id="shop">
         <div class="title">INDUSTRIAL FABRICATION SHOP</div>
         <button id="btn-autopilot" onclick="toggleAutoPilotUI()"
             style="margin-bottom: 8px; background: #333; border: 1px solid #555;">ENABLE AUTO-PILOT</button>
+        <button id="btn-turbo" onclick="toggleTurbo()"
+            style="margin-bottom: 8px; background: #333; border: 1px solid #555;">TURBO MODE (x1000)</button>
         <div class="shop-row">
             <button onclick="window.buyMachine('extractor')">Buy Extractor</button>
             <span class="price">$100</span>
@@ -197,6 +202,48 @@
                 }
             } else {
                 console.warn('AutoPilot not loaded yet');
+            }
+        }
+
+        window.turboEnabled = false;
+        window.toggleTurbo = () => {
+            window.turboEnabled = !window.turboEnabled;
+            const btn = document.getElementById('btn-turbo');
+            /* 
+               We need to dispatch 'set_speed' to the game.
+               Since we don't have direct access to 'dispatcher' here (it's in module scope in main.ts),
+               we need to expose a helper in main.ts or hack it. 
+               
+               Actually, we can use the window.setSpeed helper if we create it.
+            */
+            if (window.setGameSpeed) {
+                window.setGameSpeed(window.turboEnabled ? 1000 : 1);
+            }
+
+            if (window.turboEnabled) {
+                btn.innerText = 'TURBO ACTIVE (x1000)';
+                btn.style.background = '#d00';
+            } else {
+                btn.innerText = 'TURBO MODE (x1000)';
+                btn.style.background = '#333';
+            }
+        }
+
+        window.toggleUI = () => {
+            const overlay = document.getElementById('ui-overlay');
+            const shop = document.getElementById('shop');
+            const btn = document.getElementById('btn-hide-ui');
+
+            if (overlay.style.display === 'none') {
+                overlay.style.display = 'flex';
+                shop.style.display = 'flex';
+                btn.innerText = 'Hide UI';
+                btn.style.opacity = '1';
+            } else {
+                overlay.style.display = 'none';
+                shop.style.display = 'none';
+                btn.innerText = 'Show UI';
+                btn.style.opacity = '0.3'; // Make button subtle when playing
             }
         }
     </script>

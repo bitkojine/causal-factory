@@ -36,6 +36,7 @@ export interface FactoryModel extends Model {
     readonly gridWidth: number;
     readonly gridHeight: number;
     readonly tickCount: number;
+    readonly speedMultiplier: number;
 }
 
 export type FactoryMsg =
@@ -44,6 +45,7 @@ export type FactoryMsg =
     | { readonly kind: 'spawn_bots'; readonly count: number }
     | { readonly kind: 'buy_machine'; readonly machineType: MachineType; readonly x: number; readonly y: number }
     | { readonly kind: 'market_crash' }
-    | { readonly kind: 'set_stress'; readonly level: number };
+    | { readonly kind: 'set_stress'; readonly level: number }
+    | { readonly kind: 'set_speed'; readonly speed: number };
 
 export type FactoryEffect = Effect;
