@@ -42,32 +42,33 @@ Copper Chain:   Copper Extractor → Copper Smelter ─┐
 Advanced:       Assembler (gear) + Copper Smelter ──┴→ Advanced Assembler → compute_core
 ```
 
-| Machine | Input | Output | Cost |
-|---|---|---|---|
-| Extractor | — | `iron_ore` | $100 |
-| Smelter | `iron_ore` | `iron_plate` | $500 |
-| Assembler | `iron_plate` | `gear` | $1,200 |
-| Copper Extractor | — | `copper_ore` | $100 |
-| Copper Smelter | `copper_ore` | `copper_wire` | $500 |
+| Machine            | Input                  | Output         | Cost   |
+| ------------------ | ---------------------- | -------------- | ------ |
+| Extractor          | —                      | `iron_ore`     | $100   |
+| Smelter            | `iron_ore`             | `iron_plate`   | $500   |
+| Assembler          | `iron_plate`           | `gear`         | $1,200 |
+| Copper Extractor   | —                      | `copper_ore`   | $100   |
+| Copper Smelter     | `copper_ore`           | `copper_wire`  | $500   |
 | Advanced Assembler | `gear` + `copper_wire` | `compute_core` | $3,000 |
-| Industrial Sink | `gear` | **Credits** | free |
+| Industrial Sink    | `gear`                 | **Credits**    | free   |
 
 ### Bot Swarm
 
 Autonomous bots handle all logistics. Each tick, the simulation builds global supply and demand lists sorted by urgency, and idle bots claim tasks from those lists:
+
 - **Highest-urgency demand** — machines with the emptiest input buffers are served first
 - **Most-clogged supply** — machines with the fullest output buffers are drained first
 
 ### Controls
 
-| Button | Effect |
-|---|---|
-| **ENABLE AUTO-PILOT** | AI manages bots, builds machines, expands infrastructure |
-| **TURBO MODE (x1000)** | Applies a 1000× speed multiplier — each tick simulates 1,000× the normal time delta |
-| **Hide UI** | Cinematic view — watch the swarm work |
-| **TRIGGER EVENT STORM** | Market crash — resets every bot to idle simultaneously |
-| **BURN-IN STRESS TEST** | Continuously spawns 200 bots every 50ms |
-| **VERIFY DETERMINISM** | Replays entire message history and compares final state |
+| Button                  | Effect                                                                              |
+| ----------------------- | ----------------------------------------------------------------------------------- |
+| **ENABLE AUTO-PILOT**   | AI manages bots, builds machines, expands infrastructure                            |
+| **TURBO MODE (x1000)**  | Applies a 1000× speed multiplier — each tick simulates 1,000× the normal time delta |
+| **Hide UI**             | Cinematic view — watch the swarm work                                               |
+| **TRIGGER EVENT STORM** | Market crash — resets every bot to idle simultaneously                              |
+| **BURN-IN STRESS TEST** | Continuously spawns 200 bots every 50ms                                             |
+| **VERIFY DETERMINISM**  | Replays entire message history and compares final state                             |
 
 ---
 
@@ -123,14 +124,14 @@ Core game logic (`update.ts`, `types.ts`, `autopilot.ts`) has zero browser depen
 
 ## 🧪 Stress Tests
 
-| Test | Pressure | Validates |
-|---|---|---|
-| **State Throughput** | 100k+ bots | Immutable updates without GC jank |
-| **Event Storm** | Market crash resets all bots | Bulk state reset of 10k+ entities in one update |
-| **Batch Processing** | x1000 speed | Correct output at extreme time deltas |
-| **Entropy Replay** | Full history replay | Bit-perfect determinism |
-| **Deep Freeze** | 100k+ objects in devMode | Zero accidental mutations |
-| **Managed Subs** | AnimationFrame lifecycle | Clean start/stop with dispatcher |
+| Test                 | Pressure                     | Validates                                       |
+| -------------------- | ---------------------------- | ----------------------------------------------- |
+| **State Throughput** | 100k+ bots                   | Immutable updates without GC jank               |
+| **Event Storm**      | Market crash resets all bots | Bulk state reset of 10k+ entities in one update |
+| **Batch Processing** | x1000 speed                  | Correct output at extreme time deltas           |
+| **Entropy Replay**   | Full history replay          | Bit-perfect determinism                         |
+| **Deep Freeze**      | 100k+ objects in devMode     | Zero accidental mutations                       |
+| **Managed Subs**     | AnimationFrame lifecycle     | Clean start/stop with dispatcher                |
 
 ---
 
@@ -148,14 +149,20 @@ causaloop-repo/          ← sister folder (cloned separately)
 ```
 
 **tsconfig.json:**
+
 ```json
-{ "paths": {
+{
+  "paths": {
     "@causaloop/core": ["../causaloop-repo/packages/core/src"],
-    "@causaloop/platform-browser": ["../causaloop-repo/packages/platform-browser/src"]
-}}
+    "@causaloop/platform-browser": [
+      "../causaloop-repo/packages/platform-browser/src"
+    ]
+  }
+}
 ```
 
 **vite.config.ts:**
+
 ```typescript
 alias: {
     '@causaloop/core': path.resolve(__dirname, '../causaloop-repo/packages/core/src'),
@@ -179,13 +186,13 @@ src/
 
 ### Tech Stack
 
-| Layer | Technology |
-|---|---|
+| Layer            | Technology                                                                         |
+| ---------------- | ---------------------------------------------------------------------------------- |
 | State Management | [causaloop](https://github.com/bitkojine/causaloop) (MVU + deterministic dispatch) |
-| Rendering | Canvas 2D |
-| Build | Vite |
-| Language | TypeScript (strict) |
-| Package Manager | pnpm |
+| Rendering        | Canvas 2D                                                                          |
+| Build            | Vite                                                                               |
+| Language         | TypeScript (strict)                                                                |
+| Package Manager  | pnpm                                                                               |
 
 ---
 
