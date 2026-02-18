@@ -11,31 +11,59 @@ export class CanvasRenderer {
         if (!container) throw new Error('Container not found');
 
         this.canvas = document.createElement('canvas');
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
         container.appendChild(this.canvas);
 
         this.ctx = this.canvas.getContext('2d', { alpha: false })!;
 
+        // Initial sizing
+        this.resize();
+
+        // Robust resize listener
         window.addEventListener('resize', () => {
-            this.canvas.width = window.innerWidth;
-            this.canvas.height = window.innerHeight;
+            // Debounce or use requestAnimationFrame if strictly needed, 
+            // but for this game simple resize is fine.
+            this.resize();
         });
+    }
+
+    private resize() {
+        // High-DPI support:
+        // 1. Get the device pixel ratio (e.g., 2 on iPhone, 3 on iPhone Pro)
+        const dpr = window.devicePixelRatio || 1;
+
+        // 2. Set the "apparent" size (CSS pixels)
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+        this.canvas.style.width = `${width}px`;
+        this.canvas.style.height = `${height}px`;
+
+        // 3. Set the "actual" size (Physical pixels)
+        this.canvas.width = Math.floor(width * dpr);
+        this.canvas.height = Math.floor(height * dpr);
+
+        // 4. Scale the context so drawing commands work in CSS pixels
+        this.ctx.scale(dpr, dpr);
     }
 
     public render(snapshot: Snapshot<FactoryModel>, metrics: { tickTime: number; fps: number }) {
         const { ctx } = this;
+        // Logical width/height from style (since we scaled ctx)
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
         ctx.fillStyle = '#101010'; // Darker background
-        ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        ctx.fillRect(0, 0, width, height);
 
         // Draw Grid (subtle)
         ctx.strokeStyle = '#222';
+        ctx.lineWidth = 1; // 1 logical pixel = dpr physical pixels (crisp line)
         ctx.beginPath();
-        for (let x = 0; x < this.canvas.width; x += 40) {
-            ctx.moveTo(x, 0); ctx.lineTo(x, this.canvas.height);
+        for (let x = 0; x < width; x += 40) {
+            ctx.moveTo(x, 0); ctx.lineTo(x, height);
         }
-        for (let y = 0; y < this.canvas.height; y += 40) {
-            ctx.moveTo(0, y); ctx.lineTo(this.canvas.width, y);
+        for (let y = 0; y < height; y += 40) {
+            ctx.moveTo(0, y); ctx.lineTo(width, y);
         }
         ctx.stroke();
 

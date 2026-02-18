@@ -71,7 +71,7 @@ export const update: UpdateFn<FactoryModel, FactoryMsg, FactoryEffect> = (
     }
 };
 
-function handleTick(model: FactoryModel, delta: number, ctx: UpdateContext): UpdateResult<FactoryModel, FactoryEffect> {
+function handleTick(model: FactoryModel, delta: number, _ctx: UpdateContext): UpdateResult<FactoryModel, FactoryEffect> {
     let nextCredits = model.credits;
     const nextMachines = { ...model.machines };
 
