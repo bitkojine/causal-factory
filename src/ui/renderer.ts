@@ -36,10 +36,7 @@ export class CanvasRenderer {
     this.ctx.scale(dpr, dpr);
   }
 
-  public render(
-    snapshot: Snapshot<FactoryModel>,
-    metrics: { tickTime: number; fps: number },
-  ) {
+  public render(snapshot: Snapshot<FactoryModel>) {
     const { ctx } = this;
     const width = window.innerWidth;
     const height = window.innerHeight;
@@ -74,8 +71,6 @@ export class CanvasRenderer {
         ctx.fillRect(bot.x - 2, bot.y - 2, 4, 4);
       }
     }
-
-    this.updateOverlay(snapshot, metrics);
   }
 
   private drawMachine(m: Machine) {
@@ -111,22 +106,5 @@ export class CanvasRenderer {
     ctx.fillRect(m.x - 15, m.y + 18, 30, 4);
     ctx.fillStyle = "#00ff00";
     ctx.fillRect(m.x - 15, m.y + 18, (m.progress / 100) * 30, 4);
-  }
-
-  private updateOverlay(
-    snapshot: Snapshot<FactoryModel>,
-    metrics: { tickTime: number; fps: number },
-  ) {
-    const overlay = document.getElementById("ui-overlay");
-    if (overlay) {
-      overlay.innerHTML = `
-
-        <div class="metric" style="color: #ffcc00; font-size: 1.2em; font-weight: bold; border-left-color: #ffcc00;">Credits: $${snapshot.credits}</div>
-      <div class="metric">Bots: ${Object.keys(snapshot.bots).length}</div>
-      <div class="metric">Machines: ${Object.keys(snapshot.machines).length}</div>
-      <div class="metric">Tick Time: ${metrics.tickTime.toFixed(2)}ms</div>
-      <div class="metric">FPS: ${metrics.fps}</div>
-    `;
-    }
   }
 }

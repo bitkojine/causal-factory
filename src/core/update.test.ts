@@ -12,6 +12,7 @@ describe("Game Logic Smoke Test", () => {
       gridHeight: 600,
       tickCount: 0,
       speedMultiplier: 1,
+      autoPilotEnabled: false,
     };
 
     const result = handleTick(initialModel, 16);

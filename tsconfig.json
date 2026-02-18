@@ -19,7 +19,8 @@
       "@causaloop/core": ["../causaloop-repo/packages/core/src"],
       "@causaloop/platform-browser": [
         "../causaloop-repo/packages/platform-browser/src"
-      ]
+      ],
+      "@causaloop/devtools": ["../causaloop-repo/packages/devtools/src"]
     }
   },
   "include": ["src"]

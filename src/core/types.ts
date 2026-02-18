@@ -58,6 +58,7 @@ export interface FactoryModel extends Model {
   readonly gridHeight: number;
   readonly tickCount: number;
   readonly speedMultiplier: number;
+  readonly autoPilotEnabled: boolean;
 }
 
 export type FactoryMsg =
@@ -73,6 +74,8 @@ export type FactoryMsg =
   | { readonly kind: "market_crash" }
   | { readonly kind: "reset_bot"; readonly botId: string }
   | { readonly kind: "set_stress"; readonly level: number }
-  | { readonly kind: "set_speed"; readonly speed: number };
+  | { readonly kind: "set_speed"; readonly speed: number }
+  | { readonly kind: "toggle_autopilot" }
+  | { readonly kind: "autopilot_tick" };
 
 export type FactoryEffect = CoreEffect<FactoryMsg>;

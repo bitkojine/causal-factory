@@ -17,6 +17,10 @@ export default defineConfig({
         __dirname,
         "../causaloop-repo/packages/platform-browser/src",
       ),
+      "@causaloop/devtools": path.resolve(
+        __dirname,
+        "../causaloop-repo/packages/devtools/src",
+      ),
     },
   },
 });

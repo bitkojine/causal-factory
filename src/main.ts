@@ -1,10 +1,14 @@
-import { createDispatcher, replay } from "@causaloop/core";
-import { BrowserRunner } from "@causaloop/platform-browser";
+import { createDispatcher } from "@causaloop/core";
+import {
+  BrowserRunner,
+  createSnabbdomRenderer,
+} from "@causaloop/platform-browser";
+import { createDevTools } from "@causaloop/devtools";
 import { update } from "./core/update.js";
 import { subscriptions } from "./core/subscriptions.js";
 import { FactoryModel, FactoryMsg, MachineType } from "./core/types.js";
 import { CanvasRenderer } from "./ui/renderer.js";
-import { AutoPilot } from "./core/autopilot.js";
+import { view } from "./ui/overlay.js";
 
 const initialModel: FactoryModel = {
   machines: {},
@@ -14,14 +18,11 @@ const initialModel: FactoryModel = {
   gridHeight: 50,
   tickCount: 0,
   speedMultiplier: 1,
+  autoPilotEnabled: false,
 };
 
 const runner = new BrowserRunner<FactoryMsg>();
-const renderer = new CanvasRenderer("app");
-
-let lastTime = performance.now();
-const tickTimes: number[] = [];
-let latestSnapshot: FactoryModel = initialModel;
+const canvasRenderer = new CanvasRenderer("app");
 
 const dispatcher = createDispatcher({
   model: initialModel,
@@ -33,28 +34,29 @@ const dispatcher = createDispatcher({
     stop: (key) => runner.stopSubscription(key),
   },
   onCommit: (snapshot) => {
-    const now = performance.now();
-    const tickTime = now - lastTime;
-    tickTimes.push(tickTime);
-    if (tickTimes.length > 60) tickTimes.shift();
-
-    const avgTickTime = tickTimes.reduce((a, b) => a + b, 0) / tickTimes.length;
-    renderer.render(snapshot, {
-      tickTime: avgTickTime,
-      fps: Math.round(1000 / tickTime),
-    });
-
-    latestSnapshot = snapshot;
-    lastTime = now;
+    canvasRenderer.render(snapshot);
   },
   devMode: true,
 });
 
-const autopilot = new AutoPilot((msg) => dispatcher.dispatch(msg));
+const overlayContainer = document.getElementById("ui-overlay");
+if (overlayContainer) {
+  const uiRenderer = createSnabbdomRenderer(overlayContainer, (snapshot) =>
+    view(snapshot as FactoryModel, dispatcher.getMetrics()),
+  );
+  dispatcher.subscribe((snapshot) =>
+    uiRenderer.render(snapshot, (msg) =>
+      dispatcher.dispatch(msg as FactoryMsg),
+    ),
+  );
+}
 
-setInterval(() => {
-  autopilot.tick(latestSnapshot);
-}, 100);
+const devtoolsContainer = document.createElement("div");
+document.body.appendChild(devtoolsContainer);
+createDevTools({
+  dispatcher,
+  container: devtoolsContainer,
+});
 
 declare global {
   interface Window {
@@ -68,7 +70,8 @@ declare global {
   }
 }
 
-window.toggleAutoPilot = () => autopilot.setEnabled(!autopilot.isEnabled());
+window.toggleAutoPilot = () =>
+  dispatcher.dispatch({ kind: "toggle_autopilot" });
 window.setGameSpeed = (speed: number) =>
   dispatcher.dispatch({ kind: "set_speed", speed });
 
@@ -190,9 +193,6 @@ window.triggerMarketCrash = () => {
 };
 
 window.triggerReplay = () => {
-  const { log, snapshot: finalSnapshot } = dispatcher.getReplayableState();
-  const replayedSnapshot = replay({ initialModel, update, log });
-  const isMatch =
-    JSON.stringify(finalSnapshot) === JSON.stringify(replayedSnapshot);
+  const { isMatch } = dispatcher.verifyDeterminism();
   alert(`Determinism Replay: ${isMatch ? "PASSED ✅" : "FAILED ❌"}`);
 };
