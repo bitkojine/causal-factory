@@ -14,34 +14,25 @@ export class CanvasRenderer {
 
     this.ctx = this.canvas.getContext("2d", { alpha: false })!;
 
-    // Initial sizing
     this.resize();
 
-    // Robust resize listener
     window.addEventListener("resize", () => {
-      // Debounce or use requestAnimationFrame if strictly needed,
-      // but for this game simple resize is fine.
       this.resize();
     });
   }
 
   private resize() {
-    // High-DPI support:
-    // 1. Get the device pixel ratio (e.g., 2 on iPhone, 3 on iPhone Pro)
     const dpr = window.devicePixelRatio || 1;
 
-    // 2. Set the "apparent" size (CSS pixels)
     const width = window.innerWidth;
     const height = window.innerHeight;
 
     this.canvas.style.width = `${width}px`;
     this.canvas.style.height = `${height}px`;
 
-    // 3. Set the "actual" size (Physical pixels)
     this.canvas.width = Math.floor(width * dpr);
     this.canvas.height = Math.floor(height * dpr);
 
-    // 4. Scale the context so drawing commands work in CSS pixels
     this.ctx.scale(dpr, dpr);
   }
 
@@ -50,16 +41,14 @@ export class CanvasRenderer {
     metrics: { tickTime: number; fps: number },
   ) {
     const { ctx } = this;
-    // Logical width/height from style (since we scaled ctx)
     const width = window.innerWidth;
     const height = window.innerHeight;
 
-    ctx.fillStyle = "#101010"; // Darker background
+    ctx.fillStyle = "#101010";
     ctx.fillRect(0, 0, width, height);
 
-    // Draw Grid (subtle)
     ctx.strokeStyle = "#222";
-    ctx.lineWidth = 1; // 1 logical pixel = dpr physical pixels (crisp line)
+    ctx.lineWidth = 1;
     ctx.beginPath();
     for (let x = 0; x < width; x += 40) {
       ctx.moveTo(x, 0);
@@ -71,17 +60,14 @@ export class CanvasRenderer {
     }
     ctx.stroke();
 
-    // Render machines
     for (const id in snapshot.machines) {
       const m = snapshot.machines[id];
       this.drawMachine(m);
     }
 
-    // Render bots (batched)
-    ctx.fillStyle = "#ffcc00";
     for (const bot of Object.values(snapshot.bots)) {
       if (bot.payload) {
-        ctx.fillStyle = "#00ff00"; // Carrying
+        ctx.fillStyle = "#00ff00";
         ctx.fillRect(bot.x - 3, bot.y - 3, 6, 6);
       } else {
         ctx.fillStyle = "#ffcc00";
@@ -89,7 +75,6 @@ export class CanvasRenderer {
       }
     }
 
-    // Update overlay
     this.updateOverlay(snapshot, metrics);
   }
 
@@ -100,15 +85,14 @@ export class CanvasRenderer {
       smelter: "#ff8c00",
       assembler: "#a020f0",
       sink: "#ff4a4a",
-      extractor_copper: "#4a9eff", // Same blue, maybe distinct? Let's use a copper-ish color if possible or just distinct.
-      smelter_copper: "#b87333", // Copper color
-      assembler_advanced: "#a020f0", // Purple like assembler
+      extractor_copper: "#4a9eff",
+      smelter_copper: "#b87333",
+      assembler_advanced: "#a020f0",
     };
 
     ctx.fillStyle = colors[m.type as MachineType] || "#fff";
     ctx.fillRect(m.x - 15, m.y - 15, 30, 30);
 
-    // Inventory dots
     let i = 0;
     for (const res of Object.keys(
       m.inventory,
@@ -123,7 +107,6 @@ export class CanvasRenderer {
       }
     }
 
-    // Progress bar
     ctx.fillStyle = "#333";
     ctx.fillRect(m.x - 15, m.y + 18, 30, 4);
     ctx.fillStyle = "#00ff00";

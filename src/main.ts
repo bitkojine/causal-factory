@@ -20,7 +20,7 @@ const runner = new BrowserRunner<FactoryMsg>();
 const renderer = new CanvasRenderer("app");
 
 let lastTime = performance.now();
-let tickTimes: number[] = [];
+const tickTimes: number[] = [];
 let latestSnapshot: FactoryModel = initialModel;
 
 const dispatcher = createDispatcher({
@@ -54,7 +54,7 @@ const autopilot = new AutoPilot((msg) => dispatcher.dispatch(msg));
 
 setInterval(() => {
   autopilot.tick(latestSnapshot);
-}, 100); // 10x faster checking for turbo mode compatibility
+}, 100);
 
 declare global {
   interface Window {

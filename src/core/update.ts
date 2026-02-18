@@ -53,9 +53,6 @@ export const update: UpdateFn<FactoryModel, FactoryMsg, FactoryEffect> = (
   msg: FactoryMsg,
   ctx: UpdateContext,
 ): UpdateResult<FactoryModel, FactoryEffect> => {
-  // Basic init if missing
-  // const currentSpeed = model.speedMultiplier || 1;
-
   switch (msg.kind) {
     case "tick":
       return handleTick(model, msg.delta);
@@ -77,7 +74,7 @@ export const update: UpdateFn<FactoryModel, FactoryMsg, FactoryEffect> = (
         },
         effects: [],
       };
-    case "buy_machine":
+    case "buy_machine": {
       const spec = MACHINE_SPECS[msg.machineType];
       if (model.credits < spec.cost) return { model, effects: [] };
       const newMachine: Machine = {
@@ -106,6 +103,7 @@ export const update: UpdateFn<FactoryModel, FactoryMsg, FactoryEffect> = (
         },
         effects: [],
       };
+    }
     case "market_crash": {
       const resetBots: Record<string, Bot> = {};
       for (const id in model.bots) {
@@ -147,8 +145,6 @@ function handleTick(
   let nextCredits = model.credits;
   const nextMachines = { ...model.machines };
 
-  // 1. Process Machines
-  // Scale delta by speed multiplier
   const effectiveDelta = delta * (model.speedMultiplier || 1);
 
   for (const id in nextMachines) {
@@ -161,26 +157,18 @@ function handleTick(
       let nextProgress = m.progress + m.speed * effectiveDelta;
       let producedCount = 0;
 
-      // BATCH PROCESSING: If speed is high, we might produce multiple items in one tick
       while (nextProgress >= 100) {
         producedCount++;
         nextProgress -= 100;
 
-        // If we run out of inputs during batch, stop
-        // But for simplicity/performance in turbo mode, let's just do a greedy check?
-        // Actually, precise batching requires checking inputs every sub-step.
-        // Let's do a simplified version: calculate max possible production based on inputs.
-
-        // How many can we afford?
         const maxAfford =
           m.inputRequirements.length > 0
             ? Math.min(...m.inputRequirements.map((r) => m.inventory[r] || 0))
-            : 999999; // Infinite inputs for extractors
+            : 999999;
 
         if (producedCount > maxAfford) {
-          // We can't actually produce this one
           producedCount--;
-          nextProgress = 0; // Stuck at 0 progress waiting for inputs
+          nextProgress = 0;
           break;
         }
       }
@@ -205,7 +193,6 @@ function handleTick(
     }
   }
 
-  // 2. Identify Supply and Demand
   const supply: { machineId: string; resource: Resource; count: number }[] = [];
   const demand: { machineId: string; resource: Resource; count: number }[] = [];
 
@@ -221,13 +208,9 @@ function handleTick(
     });
   }
 
-  // Sort by Urgency!
-  // Demand: Lower count = Higher urgency (needs items most)
   demand.sort((a, b) => a.count - b.count);
-  // Supply: Higher count = Higher urgency (clogged output needs clearing)
   supply.sort((a, b) => b.count - a.count);
 
-  // 3. Update Bots
   const nextBots: Record<string, Bot> = {};
   for (const id in model.bots) {
     const bot = model.bots[id];
